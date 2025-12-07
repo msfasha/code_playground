@@ -1,0 +1,58 @@
+https://github.com/apertium/WikiExtractor
+https://pythonrepo.com/repo/attardi-wikiextractor-python-third-party-apis-wrappers
+
+usage: wikiextractor [-h] [-o OUTPUT] [-b n[KMG]] [-c] [--json] [--html] [-l] [-ns ns1,ns2]
+			 [--templates TEMPLATES] [--no-templates] [--html-safe HTML_SAFE] [--processes PROCESSES]
+			 [-q] [--debug] [-a] [-v]
+			 input
+
+Wikipedia Extractor:
+Extracts and cleans text from a Wikipedia database dump and stores output in a
+number of files of similar size in a given directory.
+Each file will contain several documents in the format:
+
+	<doc id="" url="" title="">
+	    ...
+	    </doc>
+
+If the program is invoked with the --json flag, then each file will                                            
+contain several documents formatted as json ojects, one per line, with                                         
+the following structure
+
+	{"id": "", "revid": "", "url": "", "title": "", "text": "..."}
+
+The program performs template expansion by preprocesssng the whole dump and
+collecting template definitions.
+
+positional arguments:
+  input                 XML wiki dump file
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --processes PROCESSES
+			    Number of processes to use (default 79)
+
+Output:
+  -o OUTPUT, --output OUTPUT
+			    directory for extracted files (or '-' for dumping to stdout)
+  -b n[KMG], --bytes n[KMG]
+			    maximum bytes per output file (default 1M)
+  -c, --compress        compress output files using bzip
+  --json                write output in json format instead of the default <doc> format
+
+Processing:
+  --html                produce HTML output, subsumes --links
+  -l, --links           preserve links
+  -ns ns1,ns2, --namespaces ns1,ns2
+			    accepted namespaces
+  --templates TEMPLATES
+			    use or create file containing templates
+  --no-templates        Do not expand templates
+  --html-safe HTML_SAFE
+			    use to produce HTML safe output within <doc>...</doc>
+
+Special:
+  -q, --quiet           suppress reporting progress info
+  --debug               print debug info
+  -a, --article         analyze a file containing a single article (debug option)
+  -v, --version         print program version

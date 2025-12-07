@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./ssl:/etc/nginx/ssl
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    depends_on:
+      - cassandra
+      - redis
+      - postgres
+
+  cassandra:
+    image: cassandra:5
+    ports:
+      - "9042:9042"
+    environment:
+      - CASSANDRA_CLUSTER_NAME=raasel_cluster
+      - CASSANDRA_DC=datacenter1
+    volumes:
+      - cassandra_data:/var/lib/cassandra
+
+  # cassandra-init:
+  #   image: cassandra:5
+  #   depends_on:
+  #     - cassandra
+  #   entrypoint: >
+  #     sh -c "
+  #       echo 'Waiting for Cassandra...' &&
+  #       until cqlsh cassandra -e 'describe cluster'; do
+  #         echo 'Still waiting...';
+  #         sleep 5;
+  #       done &&
+  #       echo 'Connected. Initializing schema...' &&
+  #       cqlsh cassandra -e \"
+  #         CREATE KEYSPACE IF NOT EXISTS raasel_chat
+  #         WITH replication = {'class': 'SimpleStrategy', 'replication_factor': 1};
+  #         USE raasel_chat;
+  #         CREATE TABLE IF NOT EXISTS messages (
+  #           organization_id text,
+  #           session_id text,
+  #           message_id text,
+  #           sender_id text,
+  #           sender_type text,
+  #           content text,
+  #           timestamp timestamp,
+  #           PRIMARY KEY ((organization_id, session_id), timestamp, message_id)
+  #         ) WITH CLUSTERING ORDER BY (timestamp DESC, message_id ASC);
+  #       \""
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=raasel_meta
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  cassandra_data:
+  redis_data:
+  postgres_data: 

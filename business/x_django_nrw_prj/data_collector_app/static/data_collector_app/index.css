@@ -1,0 +1,47 @@
+/* Style for the navigation menu */
+ul.nav-menu {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  background-color: #333; /* Background color of the menu */
+  overflow: hidden;
+}
+
+/* Style for the navigation menu items */
+li.nav-item {
+  float: left; /* Display items horizontally */
+}
+
+/* Style for the links within the menu items */
+li.nav-item a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* Change the color of links when hovered over */
+li.nav-item a:hover {
+  background-color: #555; /* Background color on hover */
+}
+
+img.full-width {
+  width: 100%;  
+  margin: 0; /* Remove margins */
+  padding: 0; /* Remove padding */
+}
+
+header#main-navigation {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    background-color: white; /* You can adjust the background color as needed */
+    z-index: 100; /* Ensure it's on top of other content */
+  } 
+
+  /* Add some padding to the content to make it visible below the fixed menu */
+  body {
+    padding-top: 80px; /* Adjust this value to match the height of your navigation menu */
+  }
+

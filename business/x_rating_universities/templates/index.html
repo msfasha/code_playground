@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Jordan Universities Rating{% endblock %}
+
+{% block content %}
+<!-- Loading indicator -->
+<div id="loading-indicator" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-3">Loading universities...</p>
+    <div class="progress mt-3" style="width: 300px; margin: 0 auto;">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+    </div>
+</div>
+
+<div id="content" style="display: none;">
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-light p-5 rounded">
+            <h1 class="display-4">Welcome to Jordan Universities Rating</h1>
+            <p class="lead">Discover and rate universities across Jordan. Share your experience as a student to help others make informed decisions about their education.</p>
+            <hr class="my-4">
+            <p>Browse through {{ universities|length }} universities in Jordan and see what students have to say about their experiences.</p>
+            {% if not current_user.is_authenticated %}
+            <a class="btn btn-primary btn-lg" href="{{ url_for('register') }}" role="button">
+                <i class="fas fa-user-plus me-2"></i>Register as Student
+            </a>
+            <a class="btn btn-outline-primary btn-lg ms-2" href="{{ url_for('login') }}" role="button">
+                <i class="fas fa-sign-in-alt me-2"></i>Login
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Universities in Jordan</h2>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-filter="all">All</button>
+                <button type="button" class="btn btn-outline-primary" data-filter="public">Public</button>
+                <button type="button" class="btn btn-outline-primary" data-filter="private">Private</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row" id="universities-container">
+    {% for university in universities %}
+    <div class="col-md-6 col-lg-4 mb-4 university-card" data-type="{{ university.type }}">
+        <div class="card h-100 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title mb-0">{{ university.name }}</h5>
+                    <span class="badge {% if university.type == 'public' %}bg-success{% else %}bg-warning{% endif %}">
+                        {{ university.type|title }}
+                    </span>
+                </div>
+                <p class="card-text text-muted">
+                    <i class="fas fa-map-marker-alt me-1"></i>{{ university.location }}
+                </p>
+                
+                {% set ratings = university.ratings %}
+                {% if ratings %}
+                    {% set avg_rating = (ratings|map(attribute='overall_rating')|sum) / ratings|length %}
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stars me-2">
+                                {% for i in range(5) %}
+                                    {% if i < avg_rating|int %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% elif i < avg_rating %}
+                                        <i class="fas fa-star-half-alt text-warning"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-warning"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="fw-bold">{{ "%.1f"|format(avg_rating) }}/5</span>
+                        </div>
+                        <small class="text-muted">{{ ratings|length }} rating{{ 's' if ratings|length != 1 else '' }}</small>
+                    </div>
+                {% else %}
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center">
+                            <div class="stars me-2">
+                                {% for i in range(5) %}
+                                    <i class="far fa-star text-muted"></i>
+                                {% endfor %}
+                            </div>
+                            <span class="text-muted">No ratings yet</span>
+                        </div>
+                    </div>
+                {% endif %}
+                
+                <div class="d-grid">
+                    <a href="{{ url_for('university_detail', university_id=university.id) }}" class="btn btn-outline-primary">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+            {% if university.website %}
+            <div class="card-footer bg-transparent">
+                <small class="text-muted">
+                    <a href="{{ university.website }}" target="_blank" class="text-decoration-none">
+                        <i class="fas fa-external-link-alt me-1"></i>Visit Website
+                    </a>
+                </small>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mt-5">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h3>How It Works</h3>
+                <div class="row">
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-user-plus fa-2x"></i>
+                        </div>
+                        <h5>1. Register</h5>
+                        <p>Create an account with your student information and university details.</p>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="bg-success text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-star fa-2x"></i>
+                        </div>
+                        <h5>2. Rate</h5>
+                        <p>Rate your university across multiple criteria based on your experience.</p>
+                    </div>
+                    <div class="col-md-4 text-center mb-3">
+                        <div class="bg-info text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3" style="width: 60px; height: 60px;">
+                            <i class="fas fa-share-alt fa-2x"></i>
+                        </div>
+                        <h5>3. Share</h5>
+                        <p>Help other students make informed decisions about their education.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Show content and hide loading indicator with progress
+    const loadingIndicator = document.getElementById('loading-indicator');
+    const content = document.getElementById('content');
+    const progressBar = document.querySelector('.progress-bar');
+    
+    // Simulate loading progress
+    let progress = 0;
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        progressBar.style.width = progress + '%';
+    }, 100);
+    
+    // Use requestAnimationFrame for smooth transition
+    setTimeout(() => {
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        
+        setTimeout(() => {
+            loadingIndicator.style.display = 'none';
+            content.style.display = 'block';
+        }, 200);
+    }, 800);
+    
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const universityCards = document.querySelectorAll('.university-card');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.getAttribute('data-filter');
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Filter cards with performance optimization
+            requestAnimationFrame(() => {
+                universityCards.forEach(card => {
+                    if (filter === 'all' || card.getAttribute('data-type') === filter) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

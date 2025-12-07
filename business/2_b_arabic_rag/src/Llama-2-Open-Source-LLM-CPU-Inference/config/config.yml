@@ -1,0 +1,19 @@
+RETURN_SOURCE_DOCUMENTS: True
+VECTOR_COUNT: 2
+CHUNK_SIZE: 1024
+CHUNK_OVERLAP: 100
+
+# MODEL_TYPE: 'mpt'
+# MODEL_BIN_PATH: 'models/mpt-7b-instruct.ggmlv3.q8_0.bin'
+MODEL_TYPE: 'llama'
+#MODEL_BIN_PATH: 'models/llama-2-7b-chat.ggmlv3.q8_0.bin'
+MODEL_BIN_PATH: '/home/me/mywork/nlp/models/for_my_docqa_project/llama-2-7b-chat.ggmlv3.q8_0.bin'
+MAX_NEW_TOKENS: 1024
+TEMPERATURE: 0.01
+
+#Change below English vs Arabic
+DATA_PATH: '../../data/data_ar'
+DB_FAISS_PATH: 'vectorstore_ar/db_faiss'
+
+# DB_FAISS_PATH: 'vectorstore_en/db_faiss'
+# DATA_PATH: '../../data/data_en'

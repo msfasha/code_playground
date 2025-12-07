@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Rate University - Jordan Universities Rating{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0">
+                    <i class="fas fa-star me-2"></i>Rate Your University
+                </h3>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info">
+                    <h5><i class="fas fa-info-circle me-2"></i>Rating {{ current_user.university.name }}</h5>
+                    <p class="mb-0">Please rate your university based on your experience as a student. Your feedback will help other students make informed decisions.</p>
+                </div>
+                
+                <form method="POST" id="ratingForm">
+                    <div class="row">
+                        <!-- Campus Quality -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-building me-2 text-primary"></i>Campus Quality
+                                    </h5>
+                                    <p class="card-text text-muted">Rate the overall quality and condition of the campus facilities, buildings, and infrastructure.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="campus_quality" value="{{ i }}" id="campus_{{ i }}" required>
+                                        <label for="campus_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reputation -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-award me-2 text-success"></i>Reputation
+                                    </h5>
+                                    <p class="card-text text-muted">Rate the university's reputation and standing in the academic community and job market.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="reputation" value="{{ i }}" id="reputation_{{ i }}" required>
+                                        <label for="reputation_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Education Quality -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-graduation-cap me-2 text-info"></i>Education Quality
+                                    </h5>
+                                    <p class="card-text text-muted">Rate the quality of education, curriculum, and academic standards.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="education_quality" value="{{ i }}" id="education_{{ i }}" required>
+                                        <label for="education_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employability Rate -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-briefcase me-2 text-warning"></i>Employability Rate
+                                    </h5>
+                                    <p class="card-text text-muted">Rate how well the university prepares students for employment and career success.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="employability_rate" value="{{ i }}" id="employability_{{ i }}" required>
+                                        <label for="employability_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Facilities -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-tools me-2 text-secondary"></i>Facilities
+                                    </h5>
+                                    <p class="card-text text-muted">Rate the quality and availability of facilities like libraries, labs, sports centers, etc.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="facilities" value="{{ i }}" id="facilities_{{ i }}" required>
+                                        <label for="facilities_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Faculty Quality -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chalkboard-teacher me-2 text-danger"></i>Faculty Quality
+                                    </h5>
+                                    <p class="card-text text-muted">Rate the quality of teaching staff, their expertise, and teaching methods.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="faculty_quality" value="{{ i }}" id="faculty_{{ i }}" required>
+                                        <label for="faculty_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Research Opportunities -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-microscope me-2 text-purple"></i>Research Opportunities
+                                    </h5>
+                                    <p class="card-text text-muted">Rate the availability and quality of research opportunities for students.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="research_opportunities" value="{{ i }}" id="research_{{ i }}" required>
+                                        <label for="research_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Student Life -->
+                        <div class="col-md-6 mb-4">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-users me-2 text-success"></i>Student Life
+                                    </h5>
+                                    <p class="card-text text-muted">Rate the overall student experience, social activities, and campus life.</p>
+                                    <div class="rating-group">
+                                        {% for i in range(1, 6) %}
+                                        <input type="radio" name="student_life" value="{{ i }}" id="student_life_{{ i }}" required>
+                                        <label for="student_life_{{ i }}" class="rating-label">
+                                            <i class="fas fa-star"></i>
+                                            <span class="rating-text">{{ i }}</span>
+                                        </label>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Comment Section -->
+                    <div class="mb-4">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                    <i class="fas fa-comment me-2 text-info"></i>Additional Comments
+                                </h5>
+                                <p class="card-text text-muted">Share your thoughts, experiences, or suggestions about your university (optional).</p>
+                                <textarea class="form-control" name="comment" rows="4" placeholder="Share your experience, thoughts, or suggestions about your university..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Rating
+                        </button>
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('ratingForm');
+    const ratingGroups = document.querySelectorAll('.rating-group');
+    
+    // Add visual feedback for rating selection
+    ratingGroups.forEach(group => {
+        const inputs = group.querySelectorAll('input[type="radio"]');
+        const labels = group.querySelectorAll('.rating-label');
+        
+        inputs.forEach((input, index) => {
+            input.addEventListener('change', function() {
+                // Reset all labels in this group
+                labels.forEach(label => {
+                    label.classList.remove('selected');
+                });
+                
+                // Highlight selected rating and all before it
+                for (let i = 0; i <= index; i++) {
+                    labels[i].classList.add('selected');
+                }
+            });
+        });
+    });
+    
+    // Form validation
+    form.addEventListener('submit', function(e) {
+        const requiredFields = form.querySelectorAll('input[type="radio"]:required');
+        const groups = {};
+        
+        requiredFields.forEach(field => {
+            const name = field.name;
+            if (!groups[name]) {
+                groups[name] = [];
+            }
+            groups[name].push(field);
+        });
+        
+        let isValid = true;
+        
+        Object.keys(groups).forEach(groupName => {
+            const checked = groups[groupName].some(field => field.checked);
+            if (!checked) {
+                isValid = false;
+                alert(`Please rate ${groupName.replace('_', ' ')}`);
+                return false;
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
+{% endblock %} 

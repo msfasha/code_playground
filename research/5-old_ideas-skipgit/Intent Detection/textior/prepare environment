@@ -1,0 +1,38 @@
+Uninstall Anaconda
+https://unixcop.com/how-to-uninstall-anaconda-on-ubuntu/
+First of all, you have to install the package anaconda-clean by running the following command:
+conda install anaconda-clean
+Next step is to clean all anaconda related files and directories with the tool we just installed (anaconda-clean):
+anaconda-clean --yes
+Also removes the entire anaconda directory as shown below:
+rm -rf ~/anaconda3
+NOTE: anaconda-clean tool creates a backup of files/dirs after removing the anaconda files, so remove it with the following command:
+rm -rf ~/.anaconda_backup
+
+Download and install Anaconda
+bash Anaconda3-2022.10-Linux-x86_64.sh
+
+update conda enviroment
+conda update -n base -c defaults conda
+
+create conda environment
+conda create --name textoir_env
+
+activate environment
+conda activate textoir_env
+
+if pip not installed, the install it using:
+sudo apt install python3-pip
+
+goto /mywork/dev/nlp/lm/textior/TEXTOIR/open_intent_detection and install requirements
+pip install -r requirements.txt
+
+
+if conflict with mkl_fft try:
+https://pypi.org/project/mkl-fft/
+conda install -c intel mkl_fft
+or
+pip install mkl_fft dpcpp_cpp_rt==2021.2 
+
+
+

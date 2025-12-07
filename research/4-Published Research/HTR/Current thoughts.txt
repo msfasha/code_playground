@@ -1,0 +1,10 @@
+1-Create arabic ocr using arabic printed text.
+measure results.
+try to augment text with imaging software to enable it to recognize handwriten text.
+
+2- Try to learn from english handwritten howto transform arabic hand-written.
+
+Try LSTM and GRUTry to include softmax before RNN
+
+Try to introduce atention i.e. softmax of CNN predictions, number of characters, by using a first 
+phase analysis.

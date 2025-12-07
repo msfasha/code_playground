@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<OpenSearchDescription xmlns="http://a9.com/-/spec/opensearch/1.1/" xmlns:moz="http://www.mozilla.org/2006/browser/search/">
+	<ShortName>laws668314098</ShortName>
+	<Description>Search قوانين وأنظمة الأردن - </Description>
+	<Contact>help@wordpress.com</Contact>
+	<Url type="application/atom+xml" template="https://jordanlaws.org/?s={searchTerms}&amp;feed=atom" />
+	<Url type="rss+xml" template="https://jordanlaws.org/?s={searchTerms}&amp;feed=rss2" />
+	<Url type="text/html" template="https://jordanlaws.org/?s={searchTerms}" method="GET" />
+	<Url type="application/opensearchdescription+xml" rel="self" template="https://jordanlaws.org/osd.xml" />
+	<LongName>قوانين وأنظمة الأردن</LongName>
+	<Image height="16" width="16" type="image/vnd.microsoft.icon">https://jordanlaws.org/wp-content/uploads/2020/10/cropped-law-firm-logo.jpg?w=16</Image>
+	<Image height="64" width="64" type="image/jpeg">https://jordanlaws.org/wp-content/uploads/2020/10/cropped-law-firm-logo.jpg?w=64</Image>
+	<Query role="example" searchTerms="photography" />
+	<Tags>%d8%a7%d9%84%d9%82%d9%88%d8%a7%d9%86%d9%8a%d9%86-%d8%a7%d9%84%d8%a3%d8%b1%d8%af%d9%86%d9%8a%d8%a9 %d8%a3%d9%86%d8%b8%d9%85%d8%a9-%d9%82%d8%a7%d9%86%d9%88%d9%86%d9%8a%d8%a9-%d8%a3%d8%b1%d8%af%d9%86%d9%8a%d8%a9-%d9%88%d9%81%d9%82-%d8%a3%d8%ad%d8%af%d8%ab-%d8%a7%d9%84%d8%aa%d8%b9%d8%af%d9%8a%d9%84 %d8%a7%d9%86%d8%b8%d9%85%d8%a9-%d9%82%d8%a7%d9%86%d9%88%d9%86%d9%8a%d8%a9-%d8%a7%d8%b1%d8%af%d9%86%d9%8a%d8%a9 %d8%a3%d9%88%d8%a7%d9%85%d8%b1-%d8%b5%d8%af%d8%b1%d8%aa-%d8%a8%d9%85%d9%88%d8%ac%d8%a8-%d9%82%d8%a7%d9%86%d9%88%d9%86-%d8%a7%d9%84%d8%af%d9%81%d8%a7%d8%b9-%d9%81%d9%8a-%d9%81%d8%aa%d8%b1%d8%a9-%d8%a3 %d9%85%d8%ad%d8%a7%d9%85%d9%8a-%d8%a3%d8%b1%d8%af%d9%86%d9%8a %d8%aa%d8%b9%d9%84%d9%8a%d9%85%d8%a7%d8%aa-%d9%82%d8%a7%d9%86%d9%88%d9%86%d9%8a%d8%a9-%d8%a3%d8%b1%d8%af%d9%86%d9%8a%d8%a9-%d8%a7%d9%84%d8%aa%d8%b9%d9%84%d9%85%d9%8a%d8%a7%d8%aa %d9%85%d9%82%d8%a7%d9%84%d8%a7%d8%aa %d8%a7%d8%aa%d9%81%d8%a7%d9%82%d9%8a%d8%a7%d8%aa-%d9%88-%d9%85%d8%b9%d8%a7%d9%87%d8%af%d8%a7%d8%aa-%d8%af%d9%88%d9%84%d9%8a%d8%a9 %d8%a7%d9%84%d8%b9%d9%81%d9%88-%d8%a7%d9%84%d8%b9%d8%a7%d9%85 %d8%a7%d8%aa%d9%81%d8%a7%d9%82%d9%8a%d8%a7%d8%aa-%d8%ab%d9%86%d8%a7%d8%a6%d9%8a%d8%a9-%d9%88%d8%ac%d9%85%d8%a7%d8%b9%d9%8a%d8%a9-%d8%a3%d8%b1%d8%af%d9%86%d9%8a%d8%a9</Tags>
+	<Developer>Automattic</Developer>
+	<SyndicationRight>open</SyndicationRight>
+	<AdultContent>false</AdultContent>
+	<Language>ar</Language>
+	<OutputEncoding>UTF-8</OutputEncoding>
+	<InputEncoding>UTF-8</InputEncoding>
+	<moz:SearchForm>https://jordanlaws.org</moz:SearchForm>
+</OpenSearchDescription>

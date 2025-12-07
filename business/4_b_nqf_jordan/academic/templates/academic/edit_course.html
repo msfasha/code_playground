@@ -1,0 +1,121 @@
+{% extends "academic/base.html" %}
+{% block content %}
+<h2 class="mt-4">Edit Course</h2>
+<form method="post" class="needs-validation">
+    {% csrf_token %}
+
+    <!-- Course Information Section -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Course Information</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for field in course_form %}
+                <div class="col-md-6 mb-3">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructors Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Instructors</h5>
+            <button type="button" class="btn btn-success btn-sm" onclick="addForm('instructor')">Add Instructor</button>
+        </div>
+        <div class="card-body" id="instructors-formset">
+            {{ instructor_formset.management_form }}
+            {% for form in instructor_formset %}
+            <div class="row formset-row">
+                {% for field in form %}
+                <div class="col-md-6 mb-3">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <div class="col-md-12 text-right">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeForm(this)">Remove</button>
+                </div>
+                <hr class="w-100 my-2">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Objectives Section -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Objectives</h5>
+            <button type="button" class="btn btn-success btn-sm" onclick="addForm('objective')">Add Objective</button>
+        </div>
+        <div class="card-body" id="objectives-formset">
+            {{ objective_formset.management_form }}
+            {% for form in objective_formset %}
+            <div class="row formset-row">
+                {% for field in form %}
+                <div class="col-md-6 mb-3">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.help_text %}
+                        <small class="form-text text-muted">{{ field.help_text }}</small>
+                    {% endif %}
+                </div>
+                {% endfor %}
+                <div class="col-md-12 text-right">
+                    <button type="button" class="btn btn-danger btn-sm" onclick="removeForm(this)">Remove</button>
+                </div>
+                <hr class="w-100 my-2">
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Submit Button -->
+    <button type="submit" class="btn btn-primary">Save Changes</button>
+</form>
+
+<!-- JavaScript for Dynamic Formsets -->
+<script>
+    function addForm(formsetName) {
+        const formset = document.getElementById(`${formsetName}s-formset`);
+        const totalForms = document.getElementById(`id_${formsetName}-TOTAL_FORMS`);
+        const currentFormCount = parseInt(totalForms.value);
+        const newFormCount = currentFormCount + 1;
+        
+        // Clone the last form in the formset
+        const newForm = formset.querySelector('.formset-row').cloneNode(true);
+
+        // Update the form fields' names and IDs
+        const regex = new RegExp(`(${formsetName}-\\d+)`, 'g');
+        newForm.innerHTML = newForm.innerHTML.replace(regex, `${formsetName}-${currentFormCount}`);
+
+        // Clear the input values
+        Array.from(newForm.querySelectorAll('input, select')).forEach(input => input.value = '');
+
+        // Append the new form and increment the TOTAL_FORMS count
+        formset.appendChild(newForm);
+        totalForms.value = newFormCount;
+    }
+
+    function removeForm(button) {
+        const formset = button.closest('.formset-row');
+        const formsetContainer = formset.parentNode;
+        const totalForms = formsetContainer.querySelector(`[id$="-TOTAL_FORMS"]`);
+
+        if (formsetContainer.querySelectorAll('.formset-row').length > 1) {
+            formset.remove();
+            totalForms.value = parseInt(totalForms.value) - 1;
+        }
+    }
+</script>
+{% endblock %}

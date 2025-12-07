@@ -1,0 +1,4 @@
+https://bank-request-processor-bk-478488116808.us-west1.run.app
+AIzaSyCWwAEuBvxRHacdFSeAE-kKlEVoiMuaktw
+
+https://console.cloud.google.com/run/detail/us-west1/bank-request-processor-bk/metrics?project=testing-dataproc-455106&inv=1&invt=Abyrsg

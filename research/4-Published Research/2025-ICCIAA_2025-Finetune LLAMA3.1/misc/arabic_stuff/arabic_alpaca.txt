@@ -1,0 +1,5 @@
+https://huggingface.co/datasets/FreedomIntelligence/alpaca-gpt4-arabic
+https://huggingface.co/datasets/saillab/alpaca-arabic-cleaned
+https://huggingface.co/datasets/FreedomIntelligence/Alpaca-Arabic-GPT4
+https://huggingface.co/Yasbok/Alpaca_instruction_fine_tune_Arabic
+https://www.kaggle.com/code/salaheldinelnabarawy/alpaca-arabic

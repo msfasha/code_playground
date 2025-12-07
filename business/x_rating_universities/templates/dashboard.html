@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Jordan Universities Rating{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt me-2"></i>Student Dashboard
+        </h1>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Profile Information -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Profile Information
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Full Name:</div>
+                    <div class="col-sm-8">{{ current_user.full_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Username:</div>
+                    <div class="col-sm-8">{{ current_user.username }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Email:</div>
+                    <div class="col-sm-8">{{ current_user.email }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Student ID:</div>
+                    <div class="col-sm-8">{{ current_user.student_id }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Department:</div>
+                    <div class="col-sm-8">{{ current_user.department }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">University:</div>
+                    <div class="col-sm-8">
+                        <span class="badge {% if current_user.university.type == 'public' %}bg-success{% else %}bg-warning{% endif %} me-2">
+                            {{ current_user.university.type|title }}
+                        </span>
+                        {{ current_user.university.name }}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Location:</div>
+                    <div class="col-sm-8">
+                        <i class="fas fa-map-marker-alt me-1"></i>{{ current_user.university.location }}
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4 fw-bold">Member Since:</div>
+                    <div class="col-sm-8">{{ current_user.created_at.strftime('%B %d, %Y') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Status -->
+    <div class="col-md-6 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-star me-2"></i>Rating Status
+                </h4>
+            </div>
+            <div class="card-body">
+                {% if user_rating %}
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-success mb-2">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h5 class="text-success">You have rated your university!</h5>
+                        <p class="text-muted">Thank you for sharing your experience.</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Your Overall Rating:</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="stars me-2">
+                                {% for i in range(5) %}
+                                    {% if i < user_rating.overall_rating|int %}
+                                        <i class="fas fa-star text-warning"></i>
+                                    {% elif i < user_rating.overall_rating %}
+                                        <i class="fas fa-star-half-alt text-warning"></i>
+                                    {% else %}
+                                        <i class="far fa-star text-warning"></i>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                            <span class="fw-bold fs-5">{{ "%.1f"|format(user_rating.overall_rating) }}/5</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6>Rating Details:</h6>
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">Campus Quality</small><br>
+                                <span class="fw-bold">{{ user_rating.campus_quality }}/5</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Reputation</small><br>
+                                <span class="fw-bold">{{ user_rating.reputation }}/5</span>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <small class="text-muted">Education Quality</small><br>
+                                <span class="fw-bold">{{ user_rating.education_quality }}/5</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Employability Rate</small><br>
+                                <span class="fw-bold">{{ user_rating.employability_rate }}/5</span>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <small class="text-muted">Facilities</small><br>
+                                <span class="fw-bold">{{ user_rating.facilities }}/5</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Faculty Quality</small><br>
+                                <span class="fw-bold">{{ user_rating.faculty_quality }}/5</span>
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-6">
+                                <small class="text-muted">Research Opportunities</small><br>
+                                <span class="fw-bold">{{ user_rating.research_opportunities }}/5</span>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">Student Life</small><br>
+                                <span class="fw-bold">{{ user_rating.student_life }}/5</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if user_rating.comment %}
+                    <div class="mb-3">
+                        <h6>Your Comment:</h6>
+                        <p class="text-muted">{{ user_rating.comment }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="text-muted">
+                        <small>Rated on {{ user_rating.created_at.strftime('%B %d, %Y at %I:%M %p') }}</small>
+                    </div>
+                    
+                {% else %}
+                    <div class="text-center mb-4">
+                        <div class="display-4 text-warning mb-2">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <h5 class="text-warning">You haven't rated your university yet</h5>
+                        <p class="text-muted">Share your experience to help other students make informed decisions.</p>
+                    </div>
+                    
+                    <div class="d-grid">
+                        <a href="{{ url_for('rate_university') }}" class="btn btn-success btn-lg">
+                            <i class="fas fa-star me-2"></i>Rate Your University
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('university_detail', university_id=current_user.university_id) }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-university me-2"></i>View My University
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-search me-2"></i>Browse All Universities
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        {% if not user_rating %}
+                        <a href="{{ url_for('rate_university') }}" class="btn btn-outline-success w-100">
+                            <i class="fas fa-star me-2"></i>Rate University
+                        </a>
+                        {% else %}
+                        <button class="btn btn-outline-success w-100" disabled>
+                            <i class="fas fa-check me-2"></i>Already Rated
+                        </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

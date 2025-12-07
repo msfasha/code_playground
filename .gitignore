@@ -1,0 +1,129 @@
+# ======================
+# 🐍 Python
+# ======================
+__pycache__/
+*.py[cod]
+*.so
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+*.whl
+*.log
+*.sqlite3
+*.sqlite
+*.db
+*.pkl
+*.h5
+*.out
+*.pid
+*.seed
+*.pid.lock
+.pytest_cache/
+.pyright/
+.mypy_cache/
+.pytype/
+.tox/
+.coverage
+.coverage.*
+htmlcov/
+
+# ======================
+# 💾 Data & Models
+# ======================
+**/[Dd]ata[sS]ets?/
+**/[Dd]ata/
+**/[Cc]ache/
+**/[Mm]odel_[Cc]ache/
+models/
+*.bin
+*.safetensors
+*.chroma
+**/chroma_db/
+data/chroma_db/
+
+# ======================
+# 🧪 Environments
+# ======================
+.env
+.env.*
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.venv/
+venv/
+ENV/
+
+# ======================
+# 📓 Jupyter
+# ======================
+**/.ipynb_checkpoints/
+
+# ======================
+# 🧰 Node / Frontend
+# ======================
+**/node_modules/
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/package-lock.json
+**/yarn.lock
+client/dist/
+client/build/
+client/.vite/
+
+# ======================
+# 🧑‍💻 IDEs / Editors
+# ======================
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+*.iml
+
+# ======================
+# 🧹 Logs & Temp
+# ======================
+*.log
+logs/
+debug.log
+**/temp/
+**/tmp/
+tmp/
+temp/
+*.tmp
+
+# ======================
+# 🖥️ System files
+# ======================
+.DS_Store
+*~
+
+# ======================
+# 🧪 Test Coverage
+# ======================
+coverage/
+
+
+# ======================
+# 📦 Packaging
+# ======================
+*.egg-info/
+*.whl
+dist/
+build/
+.eggs/
+develop-eggs/
+.installed.cfg
+*.egg
+MANIFEST
+pip-wheel-metadata/
+__pypackages__/
+
+# ======================
+# 📚 Pdf files
+# ======================
+*.pdf

@@ -1,0 +1,158 @@
+# ---------------------------
+# 0) Packages
+# ---------------------------
+
+# ---------------------------
+# 1) Load data
+# ---------------------------
+# Replace with your actual file path:
+# e.g., df <- read.csv("survey_data.csv", stringsAsFactors = FALSE)
+# For quick testing, you can read the sample you created earlier if available.
+df <- read.csv("survey_data.csv", stringsAsFactors = FALSE)
+
+# ---------------------------
+# 2) Basic cleaning & reverse coding
+# ---------------------------
+# Ensure Likert items are numeric
+likert_vars <- c(paste0("Strategy_Q", 1:5),
+                 paste0("Culture_Q", 6:10),
+                 paste0("Tech_Q", 11:17),
+                 paste0("Econ_Q", 19:23),
+                 paste0("Social_Q", 24:29),
+                 paste0("Env_Q", 30:35))
+
+df[likert_vars] <- lapply(df[likert_vars], function(x) as.numeric(as.character(x)))
+
+# Reverse-code Culture item about "absence of resistance" (Q7) so higher = better culture
+# Original scale 1..5  -> reversed = 6 - original
+df$Culture_Q7_rev <- 6 - df$Culture_Q7
+
+# Replace the original with the reversed version in all downstream analyses
+df$Culture_Q7 <- df$Culture_Q7_rev
+df$Culture_Q7_rev <- NULL
+
+# Optional: drop exact duplicates (you already removed Q18)
+# Ensure there is no "Tech_Q18" in your dataset.
+
+# ---------------------------
+# 3) Reliability (Cronbach's alpha) by sub-construct
+# ---------------------------
+alpha_lists <- list(
+  Strategy = paste0("Strategy_Q", 1:5),
+  Culture  = paste0("Culture_Q", 6:10),
+  Tech     = paste0("Tech_Q", 11:17),
+  Economic = paste0("Econ_Q", 19:23),
+  Social   = paste0("Social_Q", 24:29),
+  Environmental = paste0("Env_Q", 30:35)
+)
+
+cat("\n=== Cronbach's alpha (subscales) ===\n")
+lapply(names(alpha_lists), function(nm){
+  items <- alpha_lists[[nm]]
+  out <- psych::alpha(df[items])
+  cat("\n", nm, "alpha:", round(out$total$raw_alpha, 3), "\n")
+  return(invisible(out))
+})
+
+# ---------------------------
+# 4) Confirmatory Factor Analysis (first-order factors)
+# ---------------------------
+cfa_model <- '
+# First-order factors
+Strategy =~ Strategy_Q1 + Strategy_Q2 + Strategy_Q3 + Strategy_Q4 + Strategy_Q5
+Culture  =~ Culture_Q6 + Culture_Q7 + Culture_Q8 + Culture_Q9 + Culture_Q10
+Tech     =~ Tech_Q11 + Tech_Q12 + Tech_Q13 + Tech_Q14 + Tech_Q15 + Tech_Q16 + Tech_Q17
+
+Economic =~ Econ_Q19 + Econ_Q20 + Econ_Q21 + Econ_Q22 + Econ_Q23
+Social   =~ Social_Q24 + Social_Q25 + Social_Q26 + Social_Q27 + Social_Q28 + Social_Q29
+Environmental =~ Env_Q30 + Env_Q31 + Env_Q32 + Env_Q33 + Env_Q34 + Env_Q35
+'
+
+fit_cfa <- lavaan::cfa(cfa_model, data = df, std.lv = TRUE, estimator = "MLR") # robust ML
+summary(fit_cfa, fit.measures = TRUE, standardized = TRUE)
+# Discriminant validity helpers
+semTools::reliability(fit_cfa)       # Composite Reliability & AVE
+semTools::htmt(fit_cfa)              # HTMT ratios (< .85 or .90 desirable)
+
+# ---------------------------
+# 5) SEM – Model A: Second-order DT → Second-order Sustainability
+# ---------------------------
+model_A <- '
+# First-order factors (measurement)
+Strategy =~ Strategy_Q1 + Strategy_Q2 + Strategy_Q3 + Strategy_Q4 + Strategy_Q5
+Culture  =~ Culture_Q6 + Culture_Q7 + Culture_Q8 + Culture_Q9 + Culture_Q10
+Tech     =~ Tech_Q11 + Tech_Q12 + Tech_Q13 + Tech_Q14 + Tech_Q15 + Tech_Q16 + Tech_Q17
+
+Economic =~ Econ_Q19 + Econ_Q20 + Econ_Q21 + Econ_Q22 + Econ_Q23
+Social   =~ Social_Q24 + Social_Q25 + Social_Q26 + Social_Q27 + Social_Q28 + Social_Q29
+Environmental =~ Env_Q30 + Env_Q31 + Env_Q32 + Env_Q33 + Env_Q34 + Env_Q35
+
+# Second-order latent variables
+DigitalTransformation =~ Strategy + Culture + Tech
+Sustainability =~ Economic + Social + Environmental
+
+# Structural path (H0)
+Sustainability ~ DigitalTransformation
+'
+
+fit_A <- lavaan::sem(model_A, data = df, std.lv = TRUE, estimator = "MLR")
+summary(fit_A, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE)
+
+# ---------------------------
+# 6) SEM – Model B: DT (second-order) → {Economic, Social, Environmental}
+#     Tests H01, H02, H03 simultaneously
+# ---------------------------
+model_B <- '
+# First-order factors
+Strategy =~ Strategy_Q1 + Strategy_Q2 + Strategy_Q3 + Strategy_Q4 + Strategy_Q5
+Culture  =~ Culture_Q6 + Culture_Q7 + Culture_Q8 + Culture_Q9 + Culture_Q10
+Tech     =~ Tech_Q11 + Tech_Q12 + Tech_Q13 + Tech_Q14 + Tech_Q15 + Tech_Q16 + Tech_Q17
+
+Economic =~ Econ_Q19 + Econ_Q20 + Econ_Q21 + Econ_Q22 + Econ_Q23
+Social   =~ Social_Q24 + Social_Q25 + Social_Q26 + Social_Q27 + Social_Q28 + Social_Q29
+Environmental =~ Env_Q30 + Env_Q31 + Env_Q32 + Env_Q33 + Env_Q34 + Env_Q35
+
+# Second-order IV
+DigitalTransformation =~ Strategy + Culture + Tech
+
+# Structural paths (H01–H03)
+Economic       ~ DigitalTransformation
+Social         ~ DigitalTransformation
+Environmental  ~ DigitalTransformation
+'
+
+fit_B <- lavaan::sem(model_B, data = df, std.lv = TRUE, estimator = "MLR")
+summary(fit_B, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE)
+
+# ---------------------------
+# 7) Nice, compact fit indices table
+# ---------------------------
+fits <- semTools::compareFit(fit_A, fit_B)
+summary(fits)
+
+# Quick custom table
+grab_fits <- function(fit){
+  data.frame(
+    Model = deparse(substitute(fit)),
+    CFI  = fitMeasures(fit, "cfi"),
+    TLI  = fitMeasures(fit, "tli"),
+    RMSEA= fitMeasures(fit, "rmsea"),
+    SRMR = fitMeasures(fit, "srmr"),
+    AIC  = fitMeasures(fit, "aic"),
+    BIC  = fitMeasures(fit, "bic")
+  )
+}
+bind_rows(grab_fits(fit_A), grab_fits(fit_B)) %>% 
+  mutate(across(-Model, ~round(., 3))) %>% print(row.names = FALSE)
+
+# ---------------------------
+# 8) Optional: add controls (e.g., Managerial level as ordinal)
+# ---------------------------
+# Example coding for a control variable:
+# df$Managerial_num <- factor(df$Managerial,
+#                             levels = c("Operational","Functional","Top"),
+#                             ordered = TRUE)
+# model_B_ctrl <- update(model_B, 
+#   add = "Economic ~ Managerial_num\nSocial ~ Managerial_num\nEnvironmental ~ Managerial_num")
+# fit_B_ctrl <- lavaan::sem(model_B_ctrl, data = df, std.lv = TRUE, estimator = 'MLR', ordered = NULL)
+# summary(fit_B_ctrl, fit.measures = TRUE, standardized = TRUE, rsquare = TRUE)

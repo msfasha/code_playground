@@ -1,0 +1,26 @@
+% !TeX program = xelatex
+\documentclass[conference]{IEEEtran}
+
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{english}
+\setotherlanguage{arabic}
+
+% Times-like text + math (good for IEEE)
+\setmainfont{TeX Gyre Termes}            % Times New Roman compatible
+\setsansfont{TeX Gyre Heros}
+\setmonofont{TeX Gyre Cursor}
+
+% Either keep LaTeX math via newtx (works fine with XeLaTeX)...
+\usepackage{newtxmath}
+
+% ...or, if you prefer unicode math, comment the line above and use:
+% \usepackage{unicode-math}
+% \setmathfont{TeX Gyre Termes Math}
+
+% Arabic font (install one of these and use its exact name)
+\newfontfamily\arabicfont[Script=Arabic]{Amiri} % or "Noto Naskh Arabic", "Scheherazade New"
+
+\begin{document}
+	English with Arabic inline: \textarabic{اللغة العربية جميلة}.
+\end{document}

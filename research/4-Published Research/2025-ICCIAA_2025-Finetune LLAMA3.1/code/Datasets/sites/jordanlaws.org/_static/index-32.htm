@@ -1,0 +1,109 @@
+(()=>{"use strict";let t;function e(){document.querySelectorAll(".jetpack-video-wrapper").forEach((function(t){t.querySelectorAll("embed, iframe, object").forEach((function(e){let i=0;const a=t.previousElementSibling;a&&"P"===a.nodeName&&"center"===getComputedStyle(a)["text-align"]&&(i="0 auto"),e.hasAttribute("data-ratio")||(e.setAttribute("data-ratio",(e.height||0)/(e.width||0)),e.setAttribute("data-width",e.width),e.setAttribute("data-height",e.height),e.style.display="block",e.style.margin=i);const d=e.getAttribute("data-width"),n=e.getAttribute("data-height"),o=e.getAttribute("data-ratio"),r=e.parentElement.clientWidth;if(e.removeAttribute("height"),e.removeAttribute("width"),"Infinity"===o)return e.style.width="100%",void(e.style.height=n+"px");parseInt(d,10)>r?(e.style.width=r+"px",e.style.height=r*parseFloat(o)+"px"):(e.style.width=d+"px",e.style.height=n+"px")}))}))}function i(){window.addEventListener("load",e),window.addEventListener("resize",(function(){clearTimeout(t),t=setTimeout(e,500)})),window.addEventListener("is.post-load",e),setTimeout(e)}"loading"!==document.readyState?i():document.addEventListener("DOMContentLoaded",i)})();;
+!function(){function e(){this.galleries=[],this.findAndSetupNewGalleries()}function t(e){this.gallery=e,this.addCaptionEvents(),this.resize(),this.gallery.classList.remove("tiled-gallery-unresized")}e.prototype.findAndSetupNewGalleries=function(){var e=this,r=document.querySelectorAll(".tiled-gallery.tiled-gallery-unresized");Array.prototype.forEach.call(r,(function(r){e.galleries.push(new t(r))}))},e.prototype.resizeAll=function(){Array.prototype.forEach.call(this.galleries,(function(e){e.resize()}))},t.prototype.resizeableElementsSelector=".gallery-row, .gallery-group, .tiled-gallery-item img",t.prototype.addCaptionEvents=function(){var e=this.gallery.querySelectorAll(".tiled-gallery-caption");Array.prototype.forEach.call(e,(function(e){e.style.display="none"}));var t=function(e){var t=e.target.closest(".tiled-gallery-item"),r="mouseover"===e.type?"block":"none";if(t){var i=t.querySelector(".tiled-gallery-caption");i&&(i.style.display=r)}};this.gallery.addEventListener("mouseover",t),this.gallery.addEventListener("mouseout",t)},t.prototype.getExtraDimension=function(e,t,r){if("horizontal"===r){var i="border"===t?"borderLeftWidth":t+"Left",n="border"===t?"borderRightWidth":t+"Right";return(parseInt(e.style[i],10)||0)+(parseInt(e.style[n],10)||0)}if("vertical"===r){var o="border"===t?"borderTopWidth":t+"Top",a="border"===t?"borderBottomWidth":t+"Bottom";return(parseInt(e.style[o],10)||0)+(parseInt(e.style[a],10)||0)}return 0},t.prototype.resize=function(){var e=parseInt(this.gallery.dataset.originalWidth,10),t=parseFloat(getComputedStyle(this.gallery.parentNode,null).width.replace("px","")),r=Math.min(1,t/e),i=this,n=this.gallery.querySelectorAll(this.resizeableElementsSelector);Array.prototype.forEach.call(n,(function(e){var t=i.getExtraDimension(e,"margin","horizontal"),n=i.getExtraDimension(e,"margin","vertical"),o=i.getExtraDimension(e,"padding","horizontal"),a=i.getExtraDimension(e,"padding","vertical"),l=i.getExtraDimension(e,"border","horizontal"),s=i.getExtraDimension(e,"border","vertical"),d=parseInt(e.dataset.originalWidth,10)+o+l+t,c=parseInt(e.dataset.originalHeight,10)+a+s+n;e.style.width=Math.floor(r*d)-t+"px",e.style.height=Math.floor(r*c)-n+"px"}))};var r,i=window.requestAnimationFrame||window.mozRequestAnimationFrame||window.webkitRequestAnimationFrame||window.msRequestAnimationFrame;r=function(){var t=new e;document.body.addEventListener("is.post-load",(function(){t.findAndSetupNewGalleries()})),window.chrome&&i?function(e){var t=!1,r=null;function n(){e.resizeAll(),t&&i(n)}window.addEventListener("resize",(function(){clearTimeout(r),t||i(n),t=!0,r=setTimeout((function(){t=!1}),15)}))}(t):function(e){window.addEventListener("resize",(function(){e.resizeAll()}))}(t),"undefined"!=typeof wp&&wp.customize&&wp.customize.selectiveRefresh&&wp.customize.selectiveRefresh.bind("partial-content-rendered",(function(e){wp.isJetpackWidgetPlaced(e,"gallery")&&t.findAndSetupNewGalleries()}))},"loading"!==document.readyState?r():document.addEventListener("DOMContentLoaded",r)}();;
+( function () {
+	'use strict';
+
+	if ( typeof window.wpcom === 'undefined' ) {
+		window.wpcom = {};
+	}
+
+	if ( window.wpcom.carousel ) {
+		return;
+	}
+
+	var prebuilt_widths = jetpackCarouselStrings.widths;
+	var pageviews_stats_args = jetpackCarouselStrings.stats_query_args;
+
+	var findFirstLargeEnoughWidth = function ( original_w, original_h, dest_w, dest_h ) {
+		var inverse_ratio = original_h / original_w;
+
+		for ( var i = 0; i < prebuilt_widths.length; ++i ) {
+			if ( prebuilt_widths[ i ] >= dest_w || prebuilt_widths[ i ] * inverse_ratio >= dest_h ) {
+				return prebuilt_widths[ i ];
+			}
+		}
+
+		return original_w;
+	};
+
+	var removeResizeFromImageURL = function ( url ) {
+		return removeArgFromURL( url, 'resize' );
+	};
+
+	var removeArgFromURL = function ( url, arg ) {
+		var re = new RegExp( '[\\?&]' + arg + '(=[^?&]+)?' );
+		if ( url.match( re ) ) {
+			return url.replace( re, '' );
+		}
+		return url;
+	};
+
+	var addWidthToImageURL = function ( url, width ) {
+		width = parseInt( width, 10 );
+		// Give devices with a higher devicePixelRatio higher-res images (Retina display = 2, Android phones = 1.5, etc)
+		if ( 'undefined' !== typeof window.devicePixelRatio && window.devicePixelRatio > 1 ) {
+			width = Math.round( width * window.devicePixelRatio );
+		}
+		url = addArgToURL( url, 'w', width );
+		url = addArgToURL( url, 'h', '' );
+		return url;
+	};
+
+	var addArgToURL = function ( url, arg, value ) {
+		var re = new RegExp( arg + '=[^?&]+' );
+		if ( url.match( re ) ) {
+			return url.replace( re, arg + '=' + value );
+		} else {
+			var divider = url.indexOf( '?' ) !== -1 ? '&' : '?';
+			return url + divider + arg + '=' + value;
+		}
+	};
+
+	var stat = function ( names ) {
+		if ( typeof names !== 'string' ) {
+			names = names.join( ',' );
+		}
+
+		new Image().src = window.location.protocol +
+			'//pixel.wp.com/g.gif?v=wpcom-no-pv' +
+			'&x_carousel=' + names +
+			'&baba=' + Math.random();
+	};
+
+	var pageview = function ( post_id ) {
+		new Image().src = window.location.protocol +
+			'//pixel.wp.com/g.gif?host=' + encodeURIComponent( window.location.host ) +
+			'&ref=' + encodeURIComponent( document.referrer ) +
+			'&rand=' + Math.random() +
+			'&' + pageviews_stats_args +
+			'&post=' + encodeURIComponent( post_id );
+	};
+
+	var generateImgSrc = function ( srcItem, max ) {
+		var origSize = srcItem.getAttribute( 'data-orig-size' ) || '';
+
+		var src = srcItem.getAttribute( 'src' ) || srcItem.getAttribute( 'original' ) || srcItem.getAttribute( 'data-original' ) || srcItem.getAttribute( 'data-lazy-src' );
+		if ( src.indexOf( 'imgpress' ) !== -1 ) {
+			src = srcItem.getAttribute( 'data-orig-file' );
+		}
+		// Square/Circle galleries use a resize param that needs to be removed.
+		src = removeResizeFromImageURL( src );
+		src = addWidthToImageURL(
+			src,
+			findFirstLargeEnoughWidth( origSize.width, origSize.height, max.width, max.height )
+		);
+
+		return src;
+	};
+
+	window.wpcom.carousel = {
+		findFirstLargeEnoughWidth: findFirstLargeEnoughWidth,
+		removeResizeFromImageURL: removeResizeFromImageURL,
+		addWidthToImageURL: addWidthToImageURL,
+		stat: stat,
+		pageview: pageview,
+		generateImgSrc: generateImgSrc
+	};
+
+} )();
+;

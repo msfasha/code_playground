@@ -1,0 +1,22 @@
+Nasrin Mostafazadeh <nsrn.mostafazadeh@gmail.com>
+8:28 PM (4 minutes ago)
+to nsrn.mostafazadeh, me
+
+Dear Mohammad Fasha
+
+Thanks for your interest in using ROCStories and Story Cloze Test evaluation framework. Following please find the download links:
+
+ROCStories winter 2017 set: https://goo.gl/0OYkPK
+
+ROCStories spring 2016 set: https://goo.gl/7R59b1
+
+Story Cloze Test Spring 2016 set:
+
+* val set: https://goo.gl/cDmS6I
+
+* test set: https://goo.gl/iE31Qm
+
+You can submit your system results, evaluating on the current val and test set, on CodaLab: https://goo.gl/j0Wk7F. We will keep you posted with any upcoming releases. Please contact 'nasrinm@cs.rochester.edu' if you had any issues accessing the files.
+
+Best,
+

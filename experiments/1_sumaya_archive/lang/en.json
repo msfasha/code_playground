@@ -1,0 +1,132 @@
+{
+  "psutarchive": "PSUT Archive",
+  "home": {
+    "categories": {
+      "title": "Categories",
+      "all": "All Courses"
+    }
+  },
+  "courses": {
+    "title": "Courses",
+    "favorite": "Favorite courses",
+    "addToFavs": "Add to my favorite courses",
+    "noFavsMsg": "Favorite courses will appear here",
+    "link": "Useful link",
+    "sort": {
+      "last-updated": "Last updated",
+      "res-count": "Resources count",
+      "category": "Category",
+      "alphapetical": "Alphapetical",
+      "id": "ID"
+    }
+  },
+  "material": {
+    "files": "file | files",
+    "megabyte": "MB",
+    "search": "Search by type, semester, or year",
+    "download": "Download file | Download all files",
+    "preview": "Preview files",
+    "open": "Open file | Open files",
+    "semesters": {
+      "fall": "Fall",
+      "spring": "Spring",
+      "summer": "Summer"
+    },
+    "resource": {
+      "title": "Resource | Resources",
+      "type": {
+        "exam": "Exam",
+        "note": "Note"
+      },
+      "exam": {
+        "type": {
+          "first": "First",
+          "second": "Second",
+          "midterm": "Midterm",
+          "final": "Final",
+          "quiz": "Quiz",
+          "quiz1": "Quiz 1",
+          "quiz2": "Quiz 2",
+          "quiz3": "Quiz 3",
+          "quiz4": "Quiz 4",
+          "quiz5": "Quiz 5",
+          "quiz6": "Quiz 6"
+        },
+        "solved": "Solved"
+      },
+      "note": {
+        "type": {
+          "assignment": "Assignment",
+          "summary": "Summary",
+          "slides": "Slides",
+          "project": "Project",
+          "other": "Other"
+        }
+      }
+    },
+    "sort": {
+      "year": "Year",
+      "semester": "Semester",
+      "type": "Type",
+      "solved": "Solved first",
+      "size": "File size",
+      "new": "Newly added"
+    }
+  },
+  "submit": {
+    "title": "Submit Papers"
+  },
+  "about": {
+    "title": "About Us"
+  },
+  "exams": {
+    "name": "no exams | 1 exam | {n} exams",
+    "title": "Exam | Exams"
+  },
+  "notes": {
+    "name": "no notes | 1 note | {n} notes",
+    "title": "Note | Notes"
+  },
+  "papers": {
+    "name": "no papers | 1 paper | {n} papers"
+  },
+  "links": {
+    "name": "no links | 1 link | {n} links"
+  },
+  "misc": {
+    "by": "by",
+    "ramadan": "Ramadan Kareem!"
+  },
+  "lists": {
+    "search": "Search",
+    "sort": {
+      "title": "Sort by",
+      "default": "Default order"
+    },
+    "view": {
+      "switch": "Switch view mode"
+    },
+    "filter": {
+      "resources": "Only courses with resources?"
+    }
+  },
+  "footer": {
+    "links": {
+      "courses": "Courses List",
+      "submit": "Submit Papers",
+      "about": "About Us",
+      "contact": "Contact Us",
+      "terms": "Terms of Use",
+      "privacy": "Privacy Policy"
+    }
+  },
+  "messages": {
+    "no-data": {
+      "generic": "No data found",
+      "course": "No courses were found",
+      "exam": "No exams were found",
+      "note": "No notes were found"
+    },
+    "error": "We're sorry, an error has occured"
+  }
+}

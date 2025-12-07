@@ -1,0 +1,40 @@
+  Page 1                                    Tue Oct 14 19:33:39 2025
+
+  ******************************************************************
+  *                           E P A N E T                          *
+  *                   Hydraulic and Water Quality                  *
+  *                   Analysis for Pipe Networks                   *
+  *                         Version 2.2                            *
+  ******************************************************************
+  
+  Scenario: hour peak 
+  Date: 08/10/2014 12:07:19 PM 
+   
+      Input Data File ................... //media//me//Active//mywork//coding//mycode//code_experiments//0_HydroTwin//niho_inp//rmth.inp
+      Number of Junctions................ 2852
+      Number of Reservoirs............... 3
+      Number of Tanks ................... 0
+      Number of Pipes ................... 3209
+      Number of Pumps ................... 1
+      Number of Valves .................. 0
+      Headloss Formula .................. Hazen-Williams
+      Nodal Demand Model ................ DDA
+      Hydraulic Timestep ................ 1.00 hrs
+      Hydraulic Accuracy ................ 0.001000
+      Status Check Frequency ............ 2
+      Maximum Trials Checked ............ 10
+      Damping Limit Threshold ........... 0.000000
+      Maximum Trials .................... 40
+      Quality Analysis .................. None
+      Specific Gravity .................. 1.00
+      Relative Kinematic Viscosity ...... 1.00
+      Relative Chemical Diffusivity ..... 1.00
+      Demand Multiplier ................. 1.00
+      Total Duration .................... 0.00 hrs
+      Reporting Criteria:
+         No Nodes
+         No Links
+   
+  Analysis begun Tue Oct 14 19:33:39 2025
+
+  Analysis ended Tue Oct 14 19:33:39 2025

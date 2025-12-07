@@ -1,0 +1,57 @@
+I want to build a website that establishes an environment for knowledge collaboration in the Arabic region.
+The idea that universities has similar departments titles, as well as similar course names, but the covered topics and content differ. Some might be better than others, so I want to create a platform where all that knowledge is available online and the quality of the knowledge and content is determined by the community i.e. Students and Instructors via up voting, starting or liking social mechanisms.
+
+I can think of the initial requirements below:
+
+Functional Requirements:
+- Instructors can create profiles related to their role as instructor, which include their affiliation, personal info, published courses, may be an email, research interests...as well as any other related information.
+- The student also can create a profile and can subscribe to different courses.
+- If a student wants to subscribe to a course, he has to create a profile, otherwise he can view the content anonymously.
+- Anyone who wants to add a comment or rank/like anything has to be logged in to the system.
+- The platform should allow the instructors to upload their selected content online, and students can search and find and use that content.
+- Students can use the platform to search for the best content provided by the best universities or instructors, ones that they cannot afford but became available through technology.
+- Best content is related to the popularity of the courses, instructors and universities according to some metric that need to developed according to the details below:
+- The ranking mechanism in the platform is multi-faceted:
+Students can rank/courses instructors
+Students can rank/like courses
+Students can rank/courses universities
+Instructors can rank/like courses courses
+Instructors can rank/like universities
+The popularity of a university, instructor and courses has to be a combination of all these factors (some intelligent rank metric), ofcourse, all these ranks need to be created by the platform community.
+
+- The instructors themselves can collaborate and interact and share ideas and discuss thoughts to enhance their own versions of the courses or assist others in solving problems, challenges or even errors in content.
+- The students can write comments, submit likes or share courses and content if they are logged in.
+- The platform has Arabic as its first default language and English as a second language.
+
+
+
+Technical Requirements:
+- Users can surf the content of the platform without any need for registration.
+- Instructors need to create a profile in order to create content.
+- The content include lecture notes and slides in pptx or pdf formats, as well video uploads or video links to YouTube or other video hosts.
+- The platform can use Gen AI to generate random quizzes after each section. 
+The student has the option to generate a new random quiz on the fly, or use a previous quiz according to its number of likes of that quiz.
+- Therefore, the generated quizzes related to each course section should have a ranking or voting score so that the best quizzes appears more for students. 
+- Passed quizzes are stored in students profiles so that they are not display again.
+- Creating profiles can be done using an email and password with some verification mechanics, or better yet, using social login e.g. linkedin, facebook gmail.
+
+
+Course Compatibility Requirement:
+
+- When the instructor uploads a new course content, he enters meta data about his course.
+- This meta data includes the course title, expected duration, GitHub repository if any and any other related info.
+- This meta data also includes the discipline of the course and the topics, disciplines are defined by the system, it mainly includes the common faculty of the course e.g. IT, Engineering, Law, Administrative Sciences, Financial Sciences, Phamaneutical Sciences, Literature, Others.
+- Also, in the meta data, the instructor defines the general topic/s of his course.
+- These general topics are required to create a compatibility matrix or rank as defined below.
+- These general topics are related to the title of his course as well as the course description.
+- The instructor should be able to select one or more general topic.
+- When the instructor enters each general topic, a key sensitive search mechanism displays all the previous related or similar general topics so that the instructor can select from the pre-existing list so that no duplicates are created. The search list displays the matching general topic name along with its number of usages by peer instructors.
+- If no previous defined general The instructor has the ability to define a new General Topic.
+- When the instructor defines a new general topic, GenAI operated by the platform validates that topic using some engineered prompt. Otherwise, the instructor has the option to inform a site moderator.
+- Whenever a new general topic is define, GenAI operated by the platform generates a list of expected content for that general topic.
+
+- The platform should operate a compatibility check for each course, this check has to be initially initiated and defined by AI as a minimum expected content. 
+- General topics can be created by instructors, AI can create initial listing, but instructors can later modify this general list after an update suggestions achieves at least 5 votes (to add or remove a topic).
+- The general topic list can be used to create a compatibility matrix which is created by AI by checking the topics uploaded by the instructor against the general topics list.
+- General topics can be any main topic in any university field, like in computing general topics might include:
+Python Programming, Machine Learning, Large Language Models, Generative AI, Big Data Analytics, Linear Algebra, Machine Learning Math, Data Mining, Operating Systems, Data Structures, Mobile Computing, Web Development...etc

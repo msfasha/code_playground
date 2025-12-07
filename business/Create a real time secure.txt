@@ -1,0 +1,7 @@
+Create a real time secure chatting application using sockets io
+Use the signal protocol for security and E2E encryption between the client and the server
+Use react for the client application
+Clients can open chat sessions with an agency to chat with it for support
+The agency can have multiple agents to handle the multiple incoming calls or chat requests
+The agency has a list that shows the clients requests (pending on queue, active with an agent and closed)
+Persist user info and chats in sqllite database

@@ -1,0 +1,6 @@
+[submodule "external_repos/AQAD"]
+	path = external_repos/AQAD
+	url = https://github.com/adelmeleka/AQAD
+[submodule "external_repos/Arabic_QA_Datasets"]
+	path = external_repos/Arabic_QA_Datasets
+	url = https://github.com/WissamAntoun/Arabic_QA_Datasets

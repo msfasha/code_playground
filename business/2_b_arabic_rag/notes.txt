@@ -1,0 +1,27 @@
+
+NOTE: Weird behaviour with open gpt on 26/9/2023, it stop generating correct Arabic QAs based on context.
+That was true for both the API and the Internet GUI App!
+I faced that while trying to generate questions for the penal law. The code worked fine for the traffic law previously.
+
+
+Fine Tunning Scenarios:
+1- Create a nanoGPT from scratch using Andrej Kaparthy nanoGOT model. 
+Use the traffic law and the penal law to create that model. Then fine tune that model for answering questions.
+
+2- Fine-tune a Llama2 model on a general QA Arabic dataset that can be found on the Internet such as the arcd-test.json
+and the AQAD. Then fine-tune the same model the desginated QA data (penal and traffic once they are ready).
+
+https://github.com/adelmeleka/AQAD
+ARCD (Arabic Language Comprehension) found at https://www.kaggle.com/datasets/thedevastator/unlocking-arabic-language-comprehension-with-the
+https://github.com/WissamAntoun/Arabic_QA_Datasets
+
+
+3- Fine-tune a Llama2 model on next word prediction using the traffic law and penal law datasets, then fine tune the model for QA.
+
+
+4- We can try to further finetune the model using RLHF, some resources as below can help:
+https://www.youtube.com/watch?v=R2paulc3P2M
+https://www.youtube.com/watch?v=aI8cyr-gH6M&t=987s
+
+
+

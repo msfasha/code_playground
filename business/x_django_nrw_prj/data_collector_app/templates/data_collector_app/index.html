@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}
+My Title
+{% endblock %}
+
+{% block css_files %}
+<link rel="stylesheet" href="{% static 'data_collector_app/index.css' %}">
+{% endblock %}
+
+{% block content %}
+<header id="main-navigation">
+<nav>
+  <ul class="nav-menu">
+      <li class="nav-item"><a href="#home">Home</a></li>
+      <li class="nav-item"><a href="#about">About</a></li>
+      <li class="nav-item"><a href="#services">Services</a></li>
+      <li class="nav-item"><a href="#portfolio">Portfolio</a></li>
+      <li class="nav-item"><a href="#contact">Contact</a></li>
+    </ul>
+</nav>
+</header>
+<img src="{% static "data_collector_app/images/amman_city.png"%}" alt="Amman City Landscape" class="full-width"/>
+<img src="{% static "data_collector_app/images/amman_city.png"%}" alt="Amman City Landscape" class="full-width"/>
+<img src="{% static "data_collector_app/images/amman_city.png"%}" alt="Amman City Landscape" class="full-width"/>
+<img src="{% static "data_collector_app/images/amman_city.png"%}" alt="Amman City Landscape" class="full-width"/>
+
+{% endblock %}
