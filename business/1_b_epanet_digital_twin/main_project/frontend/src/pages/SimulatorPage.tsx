@@ -47,7 +47,7 @@ export function SimulatorPage() {
   const [message, setMessage] = useState<string | null>(null);
   
   // Configuration state
-  const [generationRate, setGenerationRate] = useState<number>(5);
+  const [generationRate, setGenerationRate] = useState<number>(.3);
   const [dataLossRatio, setDataLossRatio] = useState<number>(0.10); // 10% lost, 90% kept
   const [dataLossVariance, setDataLossVariance] = useState<number>(0.05);
   const [delayMean, setDelayMean] = useState<number>(2.5);

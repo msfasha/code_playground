@@ -24,10 +24,27 @@ interface NetworkOverlayProps {
   anomalies?: Anomaly[];
   highlightLocation?: string | null;
   highlightSensorType?: string | null;
+  onItemClick?: (type: 'junction' | 'pipe', id: string) => void;
+  selectedItem?: { type: 'junction' | 'pipe', id: string } | null;
+  shouldPanToSelected?: boolean; // Only pan when selection comes from table, not map click
 }
 
-export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, anomalies = [], highlightLocation = null, highlightSensorType = null }) => {
+export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ 
+  map, 
+  network, 
+  anomalies = [], 
+  highlightLocation = null, 
+  highlightSensorType = null,
+  onItemClick,
+  selectedItem = null,
+  shouldPanToSelected = false
+}) => {
   const layersRef = useRef<L.LayerGroup | null>(null);
+  const markersRef = useRef<Map<string, L.CircleMarker>>(new Map());
+  const polylinesRef = useRef<Map<string, L.Polyline>>(new Map());
+  const lastMapClickRef = useRef<{ type: 'junction' | 'pipe', id: string } | null>(null);
+  const hasInitialFitRef = useRef<boolean>(false);
+  const lastNetworkIdRef = useRef<string | null>(null);
 
   // Helper function to get severity color
   const getSeverityColor = (severity: string): string => {
@@ -53,11 +70,11 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
     if (anomalies && anomalies.length > 0) {
       // Process anomalies: for each location, keep the most recent one with highest severity
       const anomalyMap = new Map<string, Anomaly>();
-      
+
       anomalies.forEach(anomaly => {
         const key = `${anomaly.location_id}_${anomaly.sensor_type}`;
         const existing = anomalyMap.get(key);
-        
+
         if (!existing) {
           anomalyMap.set(key, anomaly);
         } else {
@@ -92,6 +109,18 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
     if (layersRef.current) {
       map.removeLayer(layersRef.current);
     }
+    
+    // Clear refs
+    markersRef.current.clear();
+    polylinesRef.current.clear();
+    
+    // Only reset initial fit flag when network actually changes, not when anomalies update
+    const currentNetworkId = network.title + '_' + network.junctions.length + '_' + network.pipes.length;
+    if (lastNetworkIdRef.current !== currentNetworkId) {
+      hasInitialFitRef.current = false;
+      lastNetworkIdRef.current = currentNetworkId;
+    }
+    // If network hasn't changed, keep hasInitialFitRef as is (don't reset it)
 
     // Create new layer group
     const layerGroup = L.layerGroup().addTo(map);
@@ -162,7 +191,7 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
       // Get monitoring data for this junction (if available)
       const anomaly = junction && junctionAnomalies.get(nodeId);
       const popupBorderColor = anomaly ? getSeverityColor(anomaly.severity) : '#007bff';
-      
+
       // Create popup content
       const popupContent = `
         <div style="min-width: 200px; border-left: 4px solid ${popupBorderColor}; padding-left: 8px;">
@@ -202,6 +231,22 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
       marker.bindPopup(popupContent);
       // Store location_id for lookup when highlighting
       (marker as any).locationId = nodeId;
+      
+      // Add click handler for selection (popup will open automatically via Leaflet)
+      if (onItemClick && junction) {
+        marker.on('click', (e) => {
+          // Track that this selection came from a map click
+          lastMapClickRef.current = { type: 'junction', id: nodeId };
+          onItemClick('junction', nodeId);
+          // Popup will open automatically via Leaflet's default behavior
+        });
+      }
+      
+      // Store marker reference for highlighting
+      if (junction) {
+        markersRef.current.set(nodeId, marker);
+      }
+      
       marker.addTo(layerGroup);
     });
 
@@ -214,20 +259,37 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
         // Check for flow anomaly for this pipe
         const anomaly = pipeAnomalies.get(pipe.id);
         const pipeColor = anomaly ? getSeverityColor(anomaly.severity) : '#000000'; // Black if no anomaly
-        
-        const line = L.polyline([
+
+        // Get vertices for this pipe
+        const pipeVertices = (network.vertices || [])
+          .filter(v => v.linkId === pipe.id)
+          .map(v => {
+            if (isPalestinianUTM(v.x, v.y)) {
+              return transformPalestinianUTMToWGS84(v.x, v.y);
+            }
+            return null;
+          })
+          .filter(Boolean) as { lat: number; lng: number }[];
+
+        // Construct polyline coordinates: [start, ...vertices, end]
+        const latLngs = [
           [node1Coord.latLng.lat, node1Coord.latLng.lng],
+          ...pipeVertices.map(v => [v.lat, v.lng]),
           [node2Coord.latLng.lat, node2Coord.latLng.lng]
-        ], {
+        ] as L.LatLngExpression[];
+
+        // Create pipe line
+        const line = L.polyline(latLngs, {
           color: pipeColor,
-          weight: 2,
-          opacity: 0.4
+          weight: 3, // Reduced width for better appearance
+          opacity: 0.6,
+          interactive: true
         });
 
         // Get monitoring data for this pipe (if available)
         const pipeAnomaly = pipeAnomalies.get(pipe.id);
         const pipePopupBorderColor = pipeAnomaly ? getSeverityColor(pipeAnomaly.severity) : '#000000';
-        
+
         // Create pipe popup
         const pipePopupContent = `
           <div style="min-width: 200px; border-left: 4px solid ${pipePopupBorderColor}; padding-left: 8px;">
@@ -256,6 +318,20 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
         line.bindPopup(pipePopupContent);
         // Store location_id for lookup when highlighting
         (line as any).locationId = pipe.id;
+        
+        // Add click handler for selection (popup will open automatically via Leaflet)
+        if (onItemClick) {
+          line.on('click', (e) => {
+            // Track that this selection came from a map click
+            lastMapClickRef.current = { type: 'pipe', id: pipe.id };
+            onItemClick('pipe', pipe.id);
+            // Popup will open automatically via Leaflet's default behavior
+          });
+        }
+        
+        // Store polyline reference for highlighting
+        polylinesRef.current.set(pipe.id, line);
+        
         line.addTo(layerGroup);
       }
     });
@@ -292,12 +368,13 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
       }
     });
 
-    // Fit map to show all network elements
-    if (transformedCoords.length > 0) {
+    // Fit map to show all network elements (only on initial load)
+    if (transformedCoords.length > 0 && !hasInitialFitRef.current) {
       const bounds = L.latLngBounds(
         transformedCoords.map(c => [c.latLng.lat, c.latLng.lng])
       );
       map.fitBounds(bounds, { padding: [20, 20] });
+      hasInitialFitRef.current = true;
     }
 
     // Handle highlighting when highlightLocation is provided
@@ -310,7 +387,7 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
           }
           return false;
         }) as L.CircleMarker | undefined;
-        
+
         if (marker) {
           const latLng = marker.getLatLng();
           map.setView(latLng, Math.max(map.getZoom(), 15));
@@ -339,7 +416,7 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
           // Add temporary highlight
           const originalColor = line.options.color;
           const originalWeight = line.options.weight;
-          line.setStyle({ color: '#ff0000', weight: 6 });
+          line.setStyle({ color: '#ff0000', weight: 10 });
           setTimeout(() => {
             line.setStyle({ color: originalColor, weight: originalWeight });
           }, 3000);
@@ -354,7 +431,124 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({ map, network, an
         layersRef.current = null;
       }
     };
-  }, [map, network, anomalies, highlightLocation, highlightSensorType]); // Add highlight props to dependencies
+  }, [map, network, anomalies, highlightLocation, highlightSensorType, onItemClick]); // Add onItemClick to dependencies
+
+  // Handle selection highlighting
+  useEffect(() => {
+    if (!map || !network || !layersRef.current) return;
+
+    // Build anomaly maps for quick lookup
+    const junctionAnomalies = new Map<string, Anomaly>();
+    const pipeAnomalies = new Map<string, Anomaly>();
+
+    if (anomalies && anomalies.length > 0) {
+      anomalies.forEach(anomaly => {
+        if (anomaly.sensor_type === 'pressure') {
+          junctionAnomalies.set(anomaly.location_id, anomaly);
+        } else if (anomaly.sensor_type === 'flow') {
+          pipeAnomalies.set(anomaly.location_id, anomaly);
+        }
+      });
+    }
+
+    // Reset all markers to default style
+    markersRef.current.forEach((marker, id) => {
+      const junction = network.junctions.find(j => j.id === id);
+      if (!junction) return;
+      
+      const anomaly = junctionAnomalies.get(id);
+      const defaultColor = anomaly ? getSeverityColor(anomaly.severity) : '#007bff';
+      
+      // Only reset if not selected
+      if (!selectedItem || selectedItem.type !== 'junction' || selectedItem.id !== id) {
+        marker.setStyle({
+          radius: 6,
+          fillColor: defaultColor,
+          color: '#fff',
+          weight: 2,
+          opacity: 1,
+          fillOpacity: 0.8
+        });
+      }
+    });
+
+    // Reset all polylines to default style
+    polylinesRef.current.forEach((polyline, id) => {
+      const pipe = network.pipes.find(p => p.id === id);
+      if (!pipe) return;
+      
+      const anomaly = pipeAnomalies.get(id);
+      const defaultColor = anomaly ? getSeverityColor(anomaly.severity) : '#000000';
+      
+      // Only reset if not selected
+      if (!selectedItem || selectedItem.type !== 'pipe' || selectedItem.id !== id) {
+        polyline.setStyle({
+          color: defaultColor,
+          weight: 3,
+          opacity: 0.6
+        });
+      }
+    });
+
+    // Apply highlighting to selected item
+    if (selectedItem) {
+      const isFromMapClick = lastMapClickRef.current && 
+        lastMapClickRef.current.type === selectedItem.type && 
+        lastMapClickRef.current.id === selectedItem.id;
+      
+      // Clear the map click flag after using it
+      if (isFromMapClick) {
+        lastMapClickRef.current = null;
+      }
+      
+      if (selectedItem.type === 'junction') {
+        const marker = markersRef.current.get(selectedItem.id);
+        if (marker) {
+          marker.setStyle({
+            radius: 10,
+            fillColor: '#ff0000',
+            color: '#fff',
+            weight: 4,
+            opacity: 1,
+            fillOpacity: 0.9
+          });
+          
+          // Only pan/zoom if selection came from table (not map click)
+          // This prevents closing the popup that was just opened by clicking
+          if (shouldPanToSelected && !isFromMapClick) {
+            map.setView(marker.getLatLng(), Math.max(map.getZoom(), 15));
+            map.once('moveend', () => {
+              marker.openPopup();
+            });
+          } else if (!isFromMapClick && !marker.isPopupOpen()) {
+            // If popup isn't open and it's not from map click, open it
+            marker.openPopup();
+          }
+        }
+      } else if (selectedItem.type === 'pipe') {
+        const polyline = polylinesRef.current.get(selectedItem.id);
+        if (polyline) {
+          polyline.setStyle({
+            color: '#ff0000',
+            weight: 6,
+            opacity: 0.9
+          });
+          
+          // Only pan/zoom if selection came from table (not map click)
+          if (shouldPanToSelected && !isFromMapClick) {
+            const bounds = polyline.getBounds();
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18 });
+            map.once('moveend', () => {
+              polyline.openPopup();
+            });
+          } else if (!isFromMapClick && !polyline.isPopupOpen()) {
+            // If popup isn't open and it's not from map click, open it
+            polyline.openPopup();
+          }
+        }
+      }
+    }
+  }, [selectedItem, map, network, anomalies, shouldPanToSelected]);
 
   return null; // This component doesn't render anything visible
 };

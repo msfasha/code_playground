@@ -1,7 +1,7 @@
 import proj4 from 'proj4';
 
 // Palestinian UTM Projection (EPSG:28193) - Palestine 1923 / Israeli CS Grid
-const PALESTINIAN_UTM_PROJ = '+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +datum=potsdam +units=m +no_defs';
+const PALESTINIAN_UTM_PROJ = '+proj=cass +lat_0=31.73409694444445 +lon_0=35.21208055555556 +x_0=170251.555 +y_0=126867.909 +a=6378300.789 +b=6356566.435 +towgs84=-275.7224,94.7824,340.8944,-8.001,-4.42,-11.821,1.0 +units=m +no_defs';
 
 // WGS 84 (EPSG:4326) - Standard lat/lng
 const WGS84_PROJ = '+proj=longlat +datum=WGS84 +no_defs';
@@ -42,7 +42,7 @@ export function transformPalestinianUTMToWGS84(utmX: number, utmY: number): LatL
  * @returns Array of LatLng objects
  */
 export function transformMultipleUTMToWGS84(coordinates: Coordinate[]): LatLng[] {
-  return coordinates.map(coord => 
+  return coordinates.map(coord =>
     transformPalestinianUTMToWGS84(coord.x, coord.y)
   );
 }

@@ -3,12 +3,21 @@ import type { ReactNode } from 'react';
 import type { ParsedNetwork } from '../utils/epanetParser';
 
 /**
+ * Selected sensors configuration
+ */
+export interface SelectedSensors {
+  pipes: string[];      // Pipe IDs with flow sensors
+  junctions: string[]; // Junction IDs with pressure sensors
+}
+
+/**
  * NetworkContext provides global state management for the EPANET network data.
  * 
  * This context stores:
  * - network: The parsed EPANET network object (persisted to localStorage)
  * - networkFile: The raw File object (not persisted, lost on refresh)
  * - networkId: The backend-assigned UUID after network upload (persisted to localStorage)
+ * - selectedSensors: Selected pipes and junctions that should have sensors (persisted to localStorage)
  * 
  * The network object is automatically saved to localStorage whenever it's updated,
  * and restored when the app initializes, ensuring persistence across page refreshes
@@ -18,9 +27,11 @@ interface NetworkContextType {
   network: ParsedNetwork | null; // Parsed network data (junctions, pipes, coordinates, etc.)
   networkFile: File | null; // Raw .inp file object (memory only, not persisted)
   networkId: string | null; // Backend UUID after network upload and baseline calculation
+  selectedSensors: SelectedSensors; // Selected pipes and junctions with sensors
   setNetwork: (network: ParsedNetwork | null) => void; // Updates network and persists to localStorage
   setNetworkFile: (file: File | null) => void; // Updates networkFile (memory only)
   setNetworkId: (id: string | null) => void; // Updates networkId and persists to localStorage
+  setSelectedSensors: (sensors: SelectedSensors) => void; // Updates selectedSensors and persists to localStorage
 }
 
 // Create React Context for network state (undefined when accessed outside provider)
@@ -29,6 +40,7 @@ const NetworkContext = createContext<NetworkContextType | undefined>(undefined);
 // localStorage keys for persisting network data across page refreshes
 const NETWORK_STORAGE_KEY = 'rtdwms_network'; // Stores parsed network as JSON
 const NETWORK_ID_STORAGE_KEY = 'rtdwms_networkId'; // Stores backend network UUID
+const SELECTED_SENSORS_STORAGE_KEY = 'rtdwms_selectedSensors'; // Stores selected sensors configuration
 
 /**
  * NetworkProvider component that wraps the app and provides network state globally.
@@ -79,6 +91,23 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
     const id = localStorage.getItem(NETWORK_ID_STORAGE_KEY);
     console.log('[NetworkContext] Initial networkId:', id || 'None');
     return id;
+  });
+  
+  // Initialize selectedSensors from localStorage
+  const [selectedSensors, setSelectedSensorsState] = useState<SelectedSensors>(() => {
+    try {
+      const stored = localStorage.getItem(SELECTED_SENSORS_STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && Array.isArray(parsed.pipes) && Array.isArray(parsed.junctions)) {
+          console.log('[NetworkContext] Loaded selectedSensors from localStorage');
+          return parsed;
+        }
+      }
+    } catch (e) {
+      console.error('[NetworkContext] Failed to load selectedSensors from localStorage:', e);
+    }
+    return { pipes: [], junctions: [] }; // Default empty selection
   });
   
   /**
@@ -159,6 +188,22 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
   }, []);
   
   /**
+   * Updates the selectedSensors state and persists it to localStorage.
+   * selectedSensors contains the IDs of pipes and junctions that should have sensors.
+   * 
+   * @param sensors - The selected sensors configuration
+   */
+  const setSelectedSensors = useCallback((sensors: SelectedSensors) => {
+    setSelectedSensorsState(sensors); // Update React state
+    try {
+      localStorage.setItem(SELECTED_SENSORS_STORAGE_KEY, JSON.stringify(sensors)); // Persist to localStorage
+      console.log('[NetworkContext] Selected sensors saved to localStorage:', sensors);
+    } catch (e) {
+      console.error('[NetworkContext] Failed to save selectedSensors to localStorage:', e);
+    }
+  }, []);
+  
+  /**
    * Safety mechanism: If network state becomes null but localStorage has data,
    * automatically restore it. This prevents accidental state loss.
    * Also logs network state changes for debugging.
@@ -201,7 +246,7 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
 
   // Provide network state and setters to all child components
   return (
-    <NetworkContext.Provider value={{ network, networkFile, networkId, setNetwork, setNetworkFile, setNetworkId }}>
+    <NetworkContext.Provider value={{ network, networkFile, networkId, selectedSensors, setNetwork, setNetworkFile, setNetworkId, setSelectedSensors }}>
       {children}
     </NetworkContext.Provider>
   );

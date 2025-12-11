@@ -91,7 +91,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onNetworkParsed, onError
               <h3>Upload EPANET Network File</h3>
               <p>Drag and drop your .inp file here, or click to browse</p>
               <button className="browse-button" disabled={isLoading}>
-                Browse Files
+                Upload Network File
               </button>
             </>
           )}
@@ -164,7 +164,7 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onNetworkParsed, onError
         }
         
         .browse-button {
-          background-color: #007bff;
+          background-color: #22c55e; /* Modern vibrant green */
           color: white;
           border: none;
           padding: 10px 20px;
@@ -172,10 +172,14 @@ export const FileUpload: React.FC<FileUploadProps> = ({ onNetworkParsed, onError
           cursor: pointer;
           font-size: 14px;
           transition: background-color 0.3s ease;
+          font-weight: 600;
+          box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3);
         }
         
         .browse-button:hover {
-          background-color: #0056b3;
+          background-color: #16a34a; /* Darker green on hover */
+          box-shadow: 0 4px 8px rgba(34, 197, 94, 0.4);
+          transform: translateY(-1px);
         }
         
         .browse-button:disabled {

@@ -32,7 +32,7 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Initialize the map
+    // Initialize the map only once on mount
     const map = L.map(mapRef.current, {
       center: [center.lat, center.lng],
       zoom: zoom,
@@ -84,14 +84,13 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
         mapInstanceRef.current = null;
       }
     };
-  }, [center.lat, center.lng, zoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run once on mount - don't recreate map when props change
 
-  // Update map center when props change
-  useEffect(() => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView([center.lat, center.lng], zoom);
-    }
-  }, [center.lat, center.lng, zoom]);
+  // Removed the second useEffect that was resetting the map view
+  // The map is initialized with the correct center/zoom, and NetworkOverlay
+  // will fit bounds when the network loads. We don't want to interfere with
+  // user zoom/pan interactions.
 
   return (
     <>
@@ -125,6 +124,15 @@ export const NetworkMap: React.FC<NetworkMapProps> = ({
         :global(.leaflet-control-layers-toggle) {
           background-color: white;
           border-radius: 4px;
+        }
+        
+        /* Ensure interactive elements show pointer cursor */
+        :global(.leaflet-interactive) {
+          cursor: pointer !important;
+        }
+        
+        :global(.leaflet-clickable) {
+          cursor: pointer !important;
         }
       `}</style>
     </>

@@ -10,7 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Body, Depends, File, HTTPException, UploadFile
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -264,5 +265,82 @@ async def calculate_baseline(
         raise
     except Exception as e:
         logger.error(f"Error in baseline calculation: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
+
+
+class UpdateZonesRequest(BaseModel):
+    """Request model for updating zones in network file."""
+    content: str  # Updated .inp file content with zones
+
+
+@router.post("/{network_id}/zones")
+async def update_zones(
+    network_id: UUID,
+    request: UpdateZonesRequest = Body(...),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Update zones in the network .inp file.
+    
+    Accepts updated .inp file content (with zones added) and saves it to disk.
+    This ensures zones persist in the actual .inp file for future reference.
+    """
+    try:
+        # Get network from database
+        stmt = select(Network).where(Network.id == network_id)
+        result = await db.execute(stmt)
+        network = result.scalar_one_or_none()
+
+        if not network:
+            raise HTTPException(status_code=404, detail=f"Network {network_id} not found")
+
+        # Validate file path exists
+        file_path = Path(network.file_path)
+        if not file_path.exists():
+            raise HTTPException(
+                status_code=404, 
+                detail=f"Network file not found at {network.file_path}"
+            )
+
+        # Backup original file
+        backup_path = file_path.with_suffix('.inp.backup')
+        try:
+            shutil.copy2(file_path, backup_path)
+            logger.info(f"Created backup: {backup_path}")
+        except Exception as e:
+            logger.warning(f"Failed to create backup: {e}")
+
+        # Write updated content to file
+        try:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(request.content)
+            
+            logger.info(f"Updated zones in network file: {network_id}")
+            
+            return {
+                "success": True,
+                "message": "Zones updated successfully",
+                "network_id": str(network_id),
+                "file_path": str(file_path)
+            }
+        except Exception as e:
+            # Restore backup on error
+            if backup_path.exists():
+                try:
+                    shutil.copy2(backup_path, file_path)
+                    logger.info(f"Restored backup after error: {backup_path}")
+                except Exception as restore_error:
+                    logger.error(f"Failed to restore backup: {restore_error}")
+            
+            logger.error(f"Failed to update zones: {e}", exc_info=True)
+            raise HTTPException(
+                status_code=500, 
+                detail=f"Failed to update zones in file: {str(e)}"
+            )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error updating zones: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 

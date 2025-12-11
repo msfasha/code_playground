@@ -56,6 +56,20 @@ export interface Coordinate {
   y: number;
 }
 
+export interface Vertex {
+  linkId: string;
+  x: number;
+  y: number;
+}
+
+export interface Zone {
+  id: string;
+  name: string;
+  polygon: Array<{ lat: number; lng: number }>; // Polygon coordinates in WGS84
+  pipes: string[]; // Pipe IDs in this zone
+  junctions: string[]; // Junction IDs in this zone
+}
+
 export interface ParsedNetwork {
   title: string;
   junctions: Junction[];
@@ -65,39 +79,41 @@ export interface ParsedNetwork {
   pumps: Pump[];
   valves: Valve[];
   coordinates: Coordinate[];
+  vertices: Vertex[];
   demands: Array<{
     junction: string;
     demand: number;
     pattern?: string;
     category?: string;
   }>;
+  zones?: Zone[]; // Optional zones array
 }
 
 export class EPANETParser {
   private parseSection(sectionName: string, lines: string[]): string[] {
-    const startIndex = lines.findIndex(line => 
+    const startIndex = lines.findIndex(line =>
       line.trim().toUpperCase() === `[${sectionName.toUpperCase()}]`
     );
-    
+
     if (startIndex === -1) return [];
-    
+
     const sectionLines: string[] = [];
     for (let i = startIndex + 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      
+
       // Stop at next section or empty line
       if (line.startsWith('[') || line === '') {
         break;
       }
-      
+
       // Skip comment lines
       if (line.startsWith(';') || line === '') {
         continue;
       }
-      
+
       sectionLines.push(line);
     }
-    
+
     return sectionLines;
   }
 
@@ -214,6 +230,18 @@ export class EPANETParser {
     });
   }
 
+  private parseVertices(lines: string[]): Vertex[] {
+    const sectionLines = this.parseSection('VERTICES', lines);
+    return sectionLines.map(line => {
+      const parts = line.split(/\s+/).filter(part => part !== '');
+      return {
+        linkId: parts[0],
+        x: parseFloat(parts[1]) || 0,
+        y: parseFloat(parts[2]) || 0
+      };
+    });
+  }
+
   /**
    * Parse DEMANDS section from EPANET .inp file.
    * 
@@ -251,6 +279,105 @@ export class EPANETParser {
   }
 
   /**
+   * Parse ZONES section from EPANET .inp file.
+   * Custom section for storing zone information.
+   * 
+   * Format: ZoneName PolygonCoordinates Pipes Junctions
+   * Example: "Zone1 31.9522,35.2332 31.9530,35.2340 P1 P2 P3 J1 J2 J3"
+   */
+  private parseZones(lines: string[]): Zone[] {
+    const sectionLines = this.parseSection('ZONES', lines);
+    const zones: Zone[] = [];
+    
+    sectionLines.forEach((line, index) => {
+      const parts = line.split(/\s+/).filter(part => part !== '');
+      if (parts.length < 3) return; // Need at least name, one coordinate, and one item
+      
+      const zoneName = parts[0];
+      const polygon: Array<{ lat: number; lng: number }> = [];
+      const pipes: string[] = [];
+      const junctions: string[] = [];
+      
+      // Parse coordinates (format: lat,lng pairs)
+      let i = 1;
+      while (i < parts.length && parts[i].includes(',') && !parts[i].startsWith('|')) {
+        const [lat, lng] = parts[i].split(',').map(Number);
+        if (!isNaN(lat) && !isNaN(lng)) {
+          polygon.push({ lat, lng });
+        }
+        i++;
+      }
+      
+      // Find PIPES and JUNCTIONS markers
+      let pipesStart = -1;
+      let junctionsStart = -1;
+      for (let j = i; j < parts.length; j++) {
+        if (parts[j] === '|PIPES|') {
+          pipesStart = j + 1;
+        } else if (parts[j] === '|JUNCTIONS|') {
+          junctionsStart = j + 1;
+          break;
+        }
+      }
+      
+      // Parse pipes (between |PIPES| and |JUNCTIONS|)
+      if (pipesStart !== -1 && junctionsStart !== -1) {
+        for (let j = pipesStart; j < junctionsStart - 1; j++) {
+          if (parts[j] && parts[j] !== '|PIPES|') {
+            pipes.push(parts[j]);
+          }
+        }
+      }
+      
+      // Parse junctions (after |JUNCTIONS|)
+      if (junctionsStart !== -1) {
+        for (let j = junctionsStart; j < parts.length; j++) {
+          if (parts[j] && parts[j] !== '|JUNCTIONS|') {
+            junctions.push(parts[j]);
+          }
+        }
+      }
+      
+      zones.push({
+        id: `zone-${index}-${Date.now()}`,
+        name: zoneName,
+        polygon,
+        pipes,
+        junctions
+      });
+    });
+    
+    return zones;
+  }
+
+  /**
+   * Parse TAGS section from EPANET .inp file.
+   * Standard EPANET section for tagging nodes and links.
+   * 
+   * Format: Object ID Tag
+   * Example: "NODE J1 Zone1" or "LINK P1 Zone1"
+   */
+  private parseTags(lines: string[]): Map<string, string> {
+    const sectionLines = this.parseSection('TAGS', lines);
+    const tagMap = new Map<string, string>();
+    
+    sectionLines.forEach(line => {
+      const parts = line.split(/\s+/).filter(part => part !== '');
+      if (parts.length >= 3) {
+        const objectType = parts[0].toUpperCase(); // NODE or LINK
+        const id = parts[1];
+        const tag = parts.slice(2).join(' '); // Tag name (may contain spaces)
+        
+        // Store as "NODE:J1" or "LINK:P1" for unique identification
+        const key = `${objectType}:${id}`;
+        tagMap.set(key, tag);
+      }
+    });
+    
+    return tagMap;
+  }
+
+  /**
    * Parse an EPANET .inp file and return a structured network object.
    * 
    * IMPORTANT: EPANET .inp files can have demands in TWO places:
@@ -267,7 +394,7 @@ export class EPANETParser {
    */
   public parseINPFile(content: string): ParsedNetwork {
     const lines = content.split('\n');
-    
+
     const parsed = {
       title: this.parseTitle(lines),
       junctions: this.parseJunctions(lines),
@@ -277,9 +404,11 @@ export class EPANETParser {
       pumps: this.parsePumps(lines),
       valves: this.parseValves(lines),
       coordinates: this.parseCoordinates(lines),
-      demands: this.parseDemands(lines)
+      vertices: this.parseVertices(lines),
+      demands: this.parseDemands(lines),
+      zones: this.parseZones(lines)
     };
-    
+
     // Merge demands from DEMANDS section into junctions
     // EPANET files often have demands=0 in JUNCTIONS section, with actual
     // demands in a separate DEMANDS section. This merge ensures junction.demand
@@ -288,7 +417,7 @@ export class EPANETParser {
     parsed.demands.forEach(d => {
       demandsMap.set(d.junction, d.demand);
     });
-    
+
     // Update junction demands from DEMANDS section (overwrites JUNCTIONS values)
     parsed.junctions.forEach(junction => {
       const demandFromSection = demandsMap.get(junction.id);
@@ -296,14 +425,34 @@ export class EPANETParser {
         junction.demand = demandFromSection;
       }
     });
-    
+
+    // Enhance zones with information from TAGS section if available
+    const tagsMap = this.parseTags(lines);
+    if (parsed.zones && parsed.zones.length > 0 && tagsMap.size > 0) {
+      // If zones exist and tags exist, verify/update zone membership from tags
+      parsed.zones.forEach(zone => {
+        // Tags can help identify which items belong to which zone
+        // This is a secondary source of truth
+        tagsMap.forEach((tag, key) => {
+          if (tag === zone.name) {
+            const [objectType, id] = key.split(':');
+            if (objectType === 'NODE' && !zone.junctions.includes(id)) {
+              zone.junctions.push(id);
+            } else if (objectType === 'LINK' && !zone.pipes.includes(id)) {
+              zone.pipes.push(id);
+            }
+          }
+        });
+      });
+    }
+
     return parsed;
   }
 
   public async parseINPFileFromFile(file: File): Promise<ParsedNetwork> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
-      
+
       reader.onload = (e) => {
         try {
           const content = e.target?.result as string;
@@ -313,13 +462,119 @@ export class EPANETParser {
           reject(new Error(`Failed to parse INP file: ${error}`));
         }
       };
-      
+
       reader.onerror = () => {
         reject(new Error('Failed to read file'));
       };
-      
+
       reader.readAsText(file);
     });
+  }
+
+  /**
+   * Write zones to .inp file content format.
+   * Adds [ZONES] and [TAGS] sections to the file content.
+   * 
+   * @param content - Original .inp file content
+   * @param zones - Array of zones to write
+   * @returns Updated .inp file content with zones
+   */
+  public writeZonesToINP(content: string, zones: Zone[]): string {
+    const lines = content.split('\n');
+    let result: string[] = [];
+    
+    // Find [END] marker or end of file
+    let endIndex = lines.findIndex(line => line.trim().toUpperCase() === '[END]');
+    if (endIndex === -1) {
+      endIndex = lines.length;
+    }
+    
+    // Copy all lines before [END]
+    result = lines.slice(0, endIndex);
+    
+    // Remove existing [ZONES] and [TAGS] sections if they exist
+    let zonesStart = -1;
+    let zonesEnd = -1;
+    let tagsStart = -1;
+    let tagsEnd = -1;
+    
+    for (let i = 0; i < result.length; i++) {
+      const line = result[i].trim().toUpperCase();
+      if (line === '[ZONES]') {
+        zonesStart = i;
+        // Find end of ZONES section
+        for (let j = i + 1; j < result.length; j++) {
+          if (result[j].trim().startsWith('[') && result[j].trim() !== '') {
+            zonesEnd = j;
+            break;
+          }
+        }
+        if (zonesEnd === -1) zonesEnd = result.length;
+      }
+      if (line === '[TAGS]') {
+        tagsStart = i;
+        // Find end of TAGS section
+        for (let j = i + 1; j < result.length; j++) {
+          if (result[j].trim().startsWith('[') && result[j].trim() !== '') {
+            tagsEnd = j;
+            break;
+          }
+        }
+        if (tagsEnd === -1) tagsEnd = result.length;
+      }
+    }
+    
+    // Remove existing sections
+    if (zonesStart !== -1 && zonesEnd !== -1) {
+      result.splice(zonesStart, zonesEnd - zonesStart);
+    }
+    if (tagsStart !== -1 && tagsEnd !== -1) {
+      // Adjust indices if zones section was removed
+      if (zonesStart !== -1 && zonesStart < tagsStart) {
+        tagsStart -= (zonesEnd - zonesStart);
+      }
+      result.splice(tagsStart, tagsEnd - tagsStart);
+    }
+    
+    // Add new [ZONES] section
+    if (zones.length > 0) {
+      result.push('');
+      result.push('[ZONES]');
+      result.push(';ZoneName    PolygonCoordinates    |PIPES|    |JUNCTIONS|');
+      
+      zones.forEach(zone => {
+        // Format polygon coordinates as "lat,lng lat,lng ..."
+        const polygonStr = zone.polygon.map(coord => `${coord.lat},${coord.lng}`).join(' ');
+        // Format pipes and junctions with delimiters
+        const pipesStr = zone.pipes.join(' ');
+        const junctionsStr = zone.junctions.join(' ');
+        result.push(`${zone.name}    ${polygonStr}    |PIPES| ${pipesStr}    |JUNCTIONS| ${junctionsStr}`);
+      });
+    }
+    
+    // Add new [TAGS] section for EPANET compatibility
+    if (zones.length > 0) {
+      result.push('');
+      result.push('[TAGS]');
+      result.push(';Object  ID    Tag');
+      
+      zones.forEach(zone => {
+        // Tag all junctions
+        zone.junctions.forEach(junctionId => {
+          result.push(`NODE    ${junctionId}    ${zone.name}`);
+        });
+        // Tag all pipes
+        zone.pipes.forEach(pipeId => {
+          result.push(`LINK    ${pipeId}    ${zone.name}`);
+        });
+      });
+    }
+    
+    // Add [END] marker
+    result.push('');
+    result.push('[END]');
+    
+    return result.join('\n');
   }
 }
 
