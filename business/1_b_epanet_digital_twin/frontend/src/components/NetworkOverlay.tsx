@@ -27,6 +27,7 @@ interface NetworkOverlayProps {
   highlightSensorType?: string | null;
   onItemClick?: (kind: SelectedKind, id: string) => void;
   selectedItem?: SelectedAsset | null;
+  selectedArea?: SelectedAsset[];
   shouldPanToSelected?: boolean; // Only pan when selection comes from table, not map click
 }
 
@@ -38,6 +39,7 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
   highlightSensorType = null,
   onItemClick,
   selectedItem = null,
+  selectedArea = [],
   shouldPanToSelected = false
 }) => {
   const layersRef = useRef<L.LayerGroup | null>(null);
@@ -127,18 +129,18 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
     const layerGroup = L.layerGroup().addTo(map);
     layersRef.current = layerGroup;
 
-    // Transform coordinates to WGS 84
+    // Transform coordinates to WGS 84 (supports both Palestinian UTM and already-WGS84 stored as x=lng,y=lat)
     const transformedCoords = network.coordinates.map(coord => {
-      if (isPalestinianUTM(coord.x, coord.y)) {
-        const latLng = transformPalestinianUTMToWGS84(coord.x, coord.y);
-        return {
-          nodeId: coord.nodeId,
-          latLng: latLng,
-          originalCoord: coord
-        };
-      }
-      return null;
-    }).filter(Boolean) as Array<{
+      const latLng = isPalestinianUTM(coord.x, coord.y)
+        ? transformPalestinianUTMToWGS84(coord.x, coord.y)
+        : { lat: coord.y, lng: coord.x };
+
+      return {
+        nodeId: coord.nodeId,
+        latLng,
+        originalCoord: coord
+      };
+    }) as Array<{
       nodeId: string;
       latLng: { lat: number; lng: number };
       originalCoord: Coordinate;
@@ -221,13 +223,10 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
         // Get vertices for this pipe
         const pipeVertices = (network.vertices || [])
           .filter(v => v.linkId === pipe.id)
-          .map(v => {
-            if (isPalestinianUTM(v.x, v.y)) {
-              return transformPalestinianUTMToWGS84(v.x, v.y);
-            }
-            return null;
-          })
-          .filter(Boolean) as { lat: number; lng: number }[];
+          .map(v => (isPalestinianUTM(v.x, v.y) ? transformPalestinianUTMToWGS84(v.x, v.y) : { lat: v.y, lng: v.x })) as {
+          lat: number;
+          lng: number;
+        }[];
 
         // Construct polyline coordinates: [start, ...vertices, end]
         const latLngs = [
@@ -270,10 +269,20 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
       const node2Coord = transformedCoords.find(c => c.nodeId === pump.node2);
 
       if (node1Coord && node2Coord) {
-        const line = L.polyline([
+        const pumpVertices = (network.vertices || [])
+          .filter(v => v.linkId === pump.id)
+          .map(v => (isPalestinianUTM(v.x, v.y) ? transformPalestinianUTMToWGS84(v.x, v.y) : { lat: v.y, lng: v.x })) as {
+          lat: number;
+          lng: number;
+        }[];
+
+        const latLngs = [
           [node1Coord.latLng.lat, node1Coord.latLng.lng],
+          ...pumpVertices.map(v => [v.lat, v.lng]),
           [node2Coord.latLng.lat, node2Coord.latLng.lng]
-        ], {
+        ] as L.LatLngExpression[];
+
+        const line = L.polyline(latLngs, {
           color: '#6f42c1', // Purple for pumps
           weight: 3,
           opacity: 0.8,
@@ -302,10 +311,20 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
       const node2Coord = transformedCoords.find(c => c.nodeId === valve.node2);
 
       if (node1Coord && node2Coord) {
-        const line = L.polyline([
+        const valveVertices = (network.vertices || [])
+          .filter(v => v.linkId === valve.id)
+          .map(v => (isPalestinianUTM(v.x, v.y) ? transformPalestinianUTMToWGS84(v.x, v.y) : { lat: v.y, lng: v.x })) as {
+          lat: number;
+          lng: number;
+        }[];
+
+        const latLngs = [
           [node1Coord.latLng.lat, node1Coord.latLng.lng],
+          ...valveVertices.map(v => [v.lat, v.lng]),
           [node2Coord.latLng.lat, node2Coord.latLng.lng]
-        ], {
+        ] as L.LatLngExpression[];
+
+        const line = L.polyline(latLngs, {
           color: '#0ea5e9', // Sky for valves
           weight: 3,
           opacity: 0.8,
@@ -429,8 +448,12 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
           selectedItem.kind === 'reservoir' ||
           selectedItem.kind === 'tank') &&
         selectedItem.id === id;
+      
+      const isInAreaSelection = selectedArea.some(
+        (item) => (item.kind === 'junction' || item.kind === 'reservoir' || item.kind === 'tank') && item.id === id
+      );
 
-      if (!isSelected) {
+      if (!isSelected && !isInAreaSelection) {
         marker.setStyle({
           radius: 6,
           fillColor: defaultColor,
@@ -465,8 +488,12 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
           selectedItem.kind === 'pump' ||
           selectedItem.kind === 'valve') &&
         selectedItem.id === id;
+      
+      const isInAreaSelection = selectedArea.some(
+        (item) => (item.kind === 'pipe' || item.kind === 'pump' || item.kind === 'valve') && item.id === id
+      );
 
-      if (!isSelected) {
+      if (!isSelected && !isInAreaSelection) {
         polyline.setStyle({
           color: defaultColor,
           weight: 3,
@@ -520,7 +547,37 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
         }
       }
     }
-  }, [selectedItem, map, network, anomalies, shouldPanToSelected]);
+
+    // Apply highlighting to area-selected items
+    if (selectedArea.length > 0) {
+      const highlightColor = '#ef4444';
+      
+      selectedArea.forEach((item) => {
+        if (item.kind === 'junction' || item.kind === 'reservoir' || item.kind === 'tank') {
+          const marker = markersRef.current.get(item.id);
+          if (marker && (!selectedItem || selectedItem.id !== item.id)) {
+            marker.setStyle({
+              radius: 8,
+              fillColor: highlightColor,
+              color: '#fff',
+              weight: 3,
+              opacity: 1,
+              fillOpacity: 0.7
+            });
+          }
+        } else if (item.kind === 'pipe' || item.kind === 'pump' || item.kind === 'valve') {
+          const polyline = polylinesRef.current.get(item.id);
+          if (polyline && (!selectedItem || selectedItem.id !== item.id)) {
+            polyline.setStyle({
+              color: highlightColor,
+              weight: 5,
+              opacity: 0.8
+            });
+          }
+        }
+      });
+    }
+  }, [selectedItem, selectedArea, map, network, anomalies, shouldPanToSelected]);
 
   return null; // This component doesn't render anything visible
 };

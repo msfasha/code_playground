@@ -1,5 +1,8 @@
 import type { LatLng as LeafletLatLng } from 'leaflet';
 import type { LatLng } from '../utils/coordinateTransform';
+import type { ParsedNetwork } from './epanetParser';
+import type { SelectedAsset } from '../context/EditorContext';
+import { isPalestinianUTM, transformPalestinianUTMToWGS84 } from './coordinateTransform';
 
 /**
  * Check if a point (junction) is inside a polygon
@@ -110,6 +113,79 @@ export function isLineInPolygon(lineStart: LatLng, lineEnd: LatLng, polygon: Lat
  */
 export function convertLeafletToLatLng(leafletLatLngs: LeafletLatLng[]): LatLng[] {
   return leafletLatLngs.map(ll => ({ lat: ll.lat, lng: ll.lng }));
+}
+
+/**
+ * Filter network elements by polygon selection
+ * @param network - The network to filter
+ * @param polygon - Polygon vertices in WGS84 (lat/lng)
+ * @returns Array of SelectedAsset objects for elements inside or intersecting the polygon
+ */
+export function filterElementsByPolygon(network: ParsedNetwork, polygon: LatLng[]): SelectedAsset[] {
+  if (polygon.length < 3) return [];
+
+  const coordSystem = (network.coordinates || []).some((c) => isPalestinianUTM(c.x, c.y)) ? 'utm' : 'wgs84';
+  
+  // Build coordinate lookup map
+  const coordMap = new Map<string, LatLng>();
+  for (const c of network.coordinates || []) {
+    const ll =
+      coordSystem === 'utm'
+        ? transformPalestinianUTMToWGS84(c.x, c.y)
+        : { lat: c.y, lng: c.x };
+    coordMap.set(c.nodeId, ll);
+  }
+
+  const selected: SelectedAsset[] = [];
+
+  // Filter nodes (junctions, reservoirs, tanks)
+  for (const junction of network.junctions || []) {
+    const coord = coordMap.get(junction.id);
+    if (coord && isPointInPolygon(coord, polygon)) {
+      selected.push({ kind: 'junction', id: junction.id });
+    }
+  }
+
+  for (const reservoir of network.reservoirs || []) {
+    const coord = coordMap.get(reservoir.id);
+    if (coord && isPointInPolygon(coord, polygon)) {
+      selected.push({ kind: 'reservoir', id: reservoir.id });
+    }
+  }
+
+  for (const tank of network.tanks || []) {
+    const coord = coordMap.get(tank.id);
+    if (coord && isPointInPolygon(coord, polygon)) {
+      selected.push({ kind: 'tank', id: tank.id });
+    }
+  }
+
+  // Filter links (pipes, pumps, valves)
+  for (const pipe of network.pipes || []) {
+    const start = coordMap.get(pipe.node1);
+    const end = coordMap.get(pipe.node2);
+    if (start && end && isLineInPolygon(start, end, polygon)) {
+      selected.push({ kind: 'pipe', id: pipe.id });
+    }
+  }
+
+  for (const pump of network.pumps || []) {
+    const start = coordMap.get(pump.node1);
+    const end = coordMap.get(pump.node2);
+    if (start && end && isLineInPolygon(start, end, polygon)) {
+      selected.push({ kind: 'pump', id: pump.id });
+    }
+  }
+
+  for (const valve of network.valves || []) {
+    const start = coordMap.get(valve.node1);
+    const end = coordMap.get(valve.node2);
+    if (start && end && isLineInPolygon(start, end, polygon)) {
+      selected.push({ kind: 'valve', id: valve.id });
+    }
+  }
+
+  return selected;
 }
 
 

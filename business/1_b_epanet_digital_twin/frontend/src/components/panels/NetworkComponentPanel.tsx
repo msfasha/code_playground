@@ -42,7 +42,7 @@ function updateNetworkWithDraft(network: ParsedNetwork, draft: Draft): ParsedNet
 
 export function NetworkComponentPanel() {
   const { network, setNetwork } = useNetwork();
-  const { selected, setSelected } = useEditor();
+  const { selected, setSelected, selectedArea, setSelectedArea } = useEditor();
 
   const selectedAsset = useMemo(() => {
     if (!network || !selected) return null;
@@ -108,7 +108,7 @@ export function NetworkComponentPanel() {
   return (
     <div className="rtdwms-panel">
       <div className="rtdwms-panel-header">
-        <div className="rtdwms-panel-title">Network Component</div>
+        <div className="rtdwms-panel-title">Network Elements</div>
       </div>
 
       {!network ? (
@@ -127,7 +127,140 @@ export function NetworkComponentPanel() {
 
           <div className="rtdwms-divider" />
 
-          {!selected ? (
+          {selectedArea.length > 0 ? (
+            <div className="rtdwms-panel-section">
+              <div className="rtdwms-panel-section-title">Selected Elements ({selectedArea.length})</div>
+              
+              {(() => {
+                const grouped = {
+                  junctions: selectedArea.filter((x) => x.kind === 'junction'),
+                  reservoirs: selectedArea.filter((x) => x.kind === 'reservoir'),
+                  tanks: selectedArea.filter((x) => x.kind === 'tank'),
+                  pipes: selectedArea.filter((x) => x.kind === 'pipe'),
+                  pumps: selectedArea.filter((x) => x.kind === 'pump'),
+                  valves: selectedArea.filter((x) => x.kind === 'valve'),
+                };
+
+                return (
+                  <div className="rtdwms-area-selection-list">
+                    {grouped.junctions.length > 0 && (
+                      <div className="rtdwms-element-group">
+                        <div className="rtdwms-element-group-title">Junctions ({grouped.junctions.length})</div>
+                        {grouped.junctions.map((item) => (
+                          <div
+                            key={item.id}
+                            className="rtdwms-element-item"
+                            onClick={() => {
+                              setSelected(item);
+                              setSelectedArea([]);
+                            }}
+                          >
+                            • {item.id}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {grouped.reservoirs.length > 0 && (
+                      <div className="rtdwms-element-group">
+                        <div className="rtdwms-element-group-title">Reservoirs ({grouped.reservoirs.length})</div>
+                        {grouped.reservoirs.map((item) => (
+                          <div
+                            key={item.id}
+                            className="rtdwms-element-item"
+                            onClick={() => {
+                              setSelected(item);
+                              setSelectedArea([]);
+                            }}
+                          >
+                            • {item.id}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {grouped.tanks.length > 0 && (
+                      <div className="rtdwms-element-group">
+                        <div className="rtdwms-element-group-title">Tanks ({grouped.tanks.length})</div>
+                        {grouped.tanks.map((item) => (
+                          <div
+                            key={item.id}
+                            className="rtdwms-element-item"
+                            onClick={() => {
+                              setSelected(item);
+                              setSelectedArea([]);
+                            }}
+                          >
+                            • {item.id}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {grouped.pipes.length > 0 && (
+                      <div className="rtdwms-element-group">
+                        <div className="rtdwms-element-group-title">Pipes ({grouped.pipes.length})</div>
+                        {grouped.pipes.map((item) => (
+                          <div
+                            key={item.id}
+                            className="rtdwms-element-item"
+                            onClick={() => {
+                              setSelected(item);
+                              setSelectedArea([]);
+                            }}
+                          >
+                            • {item.id}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {grouped.pumps.length > 0 && (
+                      <div className="rtdwms-element-group">
+                        <div className="rtdwms-element-group-title">Pumps ({grouped.pumps.length})</div>
+                        {grouped.pumps.map((item) => (
+                          <div
+                            key={item.id}
+                            className="rtdwms-element-item"
+                            onClick={() => {
+                              setSelected(item);
+                              setSelectedArea([]);
+                            }}
+                          >
+                            • {item.id}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {grouped.valves.length > 0 && (
+                      <div className="rtdwms-element-group">
+                        <div className="rtdwms-element-group-title">Valves ({grouped.valves.length})</div>
+                        {grouped.valves.map((item) => (
+                          <div
+                            key={item.id}
+                            className="rtdwms-element-item"
+                            onClick={() => {
+                              setSelected(item);
+                              setSelectedArea([]);
+                            }}
+                          >
+                            • {item.id}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              <div className="rtdwms-row">
+                <button type="button" onClick={() => setSelectedArea([])}>
+                  Clear selection
+                </button>
+              </div>
+            </div>
+          ) : !selected ? (
             <div className="rtdwms-panel-section">
               <div className="rtdwms-panel-section-title">Selection</div>
               <div className="rtdwms-panel-section-note">Click a component on the map to edit it here.</div>
@@ -503,6 +636,35 @@ export function NetworkComponentPanel() {
 
             .rtdwms-primary:hover {
               background: #0b1220;
+            }
+
+            .rtdwms-area-selection-list {
+              margin-top: 12px;
+            }
+
+            .rtdwms-element-group {
+              margin-bottom: 16px;
+            }
+
+            .rtdwms-element-group-title {
+              font-weight: 700;
+              font-size: 12px;
+              color: #111827;
+              margin-bottom: 6px;
+            }
+
+            .rtdwms-element-item {
+              padding: 6px 8px;
+              font-size: 12px;
+              color: #374151;
+              cursor: pointer;
+              border-radius: 4px;
+              margin-bottom: 2px;
+            }
+
+            .rtdwms-element-item:hover {
+              background: #f3f4f6;
+              color: #111827;
             }
           `}</style>
         </div>

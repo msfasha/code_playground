@@ -186,6 +186,16 @@ button:disabled {
   background: #f9fafb;
 }
 
+.rtdwms-tool--active:not(:disabled) {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
+.rtdwms-tool--active:hover:not(:disabled) {
+  background: #0b1220;
+}
+
 /* Simple dropdown menu */
 .rtdwms-menu {
   position: relative;

@@ -37,6 +37,22 @@ export function transformPalestinianUTMToWGS84(utmX: number, utmY: number): LatL
 }
 
 /**
+ * Transform WGS 84 (lat/lng) to Palestinian UTM coordinates (EPSG:28193)
+ * @param lat - Latitude
+ * @param lng - Longitude
+ * @returns Coordinate object with x/y (meters)
+ */
+export function transformWGS84ToPalestinianUTM(lat: number, lng: number): Coordinate {
+  try {
+    const [x, y] = proj4('EPSG:4326', 'EPSG:28193', [lng, lat]);
+    return { x, y };
+  } catch (error) {
+    console.error('Error transforming coordinates:', error);
+    throw new Error(`Failed to transform coordinates: ${error}`);
+  }
+}
+
+/**
  * Transform multiple Palestinian UTM coordinates to WGS 84
  * @param coordinates - Array of UTM coordinates
  * @returns Array of LatLng objects
