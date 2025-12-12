@@ -125,10 +125,6 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
     }
     // If network hasn't changed, keep hasInitialFitRef as is (don't reset it)
 
-    // Create new layer group
-    const layerGroup = L.layerGroup().addTo(map);
-    layersRef.current = layerGroup;
-
     // Transform coordinates to WGS 84 (supports both Palestinian UTM and already-WGS84 stored as x=lng,y=lat)
     const transformedCoords = network.coordinates.map(coord => {
       const latLng = isPalestinianUTM(coord.x, coord.y)
@@ -153,6 +149,10 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
       console.warn('No valid coordinates found for transformation');
       return;
     }
+
+    // Create new layer group
+    const layerGroup = L.layerGroup().addTo(map);
+    layersRef.current = layerGroup;
 
     // Create node markers
     transformedCoords.forEach(({ nodeId, latLng }) => {

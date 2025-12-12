@@ -367,7 +367,9 @@ export function NetworkEditorPage() {
           anomalies={[]}
           selectedItem={selected}
           selectedArea={selectedArea}
-          onItemClick={mode === 'select' ? (kind, id) => setSelected({ kind, id }) : undefined}
+          onItemClick={mode === 'select' ? (kind, id) => {
+            setSelected({ kind, id });
+          } : undefined}
         />
       )}
 
