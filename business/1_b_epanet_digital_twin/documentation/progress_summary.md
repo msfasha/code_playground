@@ -371,3 +371,248 @@ The network editor now provides a complete, interactive editing experience simil
 - ✅ **Visual highlighting of selected elements**
 
 The interface is ready for users to create and edit EPANET networks interactively on the map, with powerful selection tools for managing multiple elements efficiently.
+
+---
+
+## Engagement 4: Docker Production Deployment
+
+### Overview
+Created a complete Docker-based production deployment setup enabling the application to be deployed and accessed externally via public IP 46.32.109.46 with HTTPS support.
+
+### Components Created
+
+#### 1. **Development Docker Setup** (`docker-compose.yml`)
+- **Purpose**: Database-only container for local development
+- **Service**: PostgreSQL 16 Alpine container
+- **Features**:
+  - Container name: `rtdwms_db`
+  - Port mapping: 5432:5432
+  - Persistent volume: `postgres_data`
+  - Health checks
+  - Auto-restart policy
+- **Usage**: Works with existing `start_system.sh` script
+
+#### 2. **Production Docker Setup** (`docker-compose.prod.yml`)
+- **Architecture**: Multi-container setup with all services
+- **Services**:
+  - **db**: PostgreSQL 16 database (internal only)
+  - **backend**: FastAPI application container
+  - **frontend**: React application served via Nginx
+  - **nginx**: Reverse proxy with SSL/HTTPS
+- **Network**: Isolated Docker network (`rtdwms_network`)
+- **Volumes**: Persistent database storage
+
+#### 3. **Backend Dockerfile** (`backend/Dockerfile`)
+- Base image: `python:3.11-slim`
+- Multi-stage optimization
+- Installs system dependencies for scientific libraries
+- Production-ready uvicorn configuration
+- Environment variable support for database connection
+
+#### 4. **Frontend Dockerfile** (`frontend/Dockerfile`)
+- Multi-stage build:
+  - Stage 1: Build React app with Node.js
+  - Stage 2: Serve with Nginx Alpine
+- Optimized production build
+- Nginx configuration for SPA routing
+- Static asset caching
+
+#### 5. **Nginx Reverse Proxy** (`nginx/nginx.conf`)
+- **SSL/HTTPS Configuration**:
+  - Let's Encrypt certificate support
+  - HTTP to HTTPS redirect
+  - Modern SSL protocols (TLS 1.2/1.3)
+  - Security headers (HSTS, XSS protection, etc.)
+- **Routing**:
+  - Frontend: `/` → React app
+  - Backend API: `/api/*` → FastAPI backend
+  - Health check: `/health` → Backend health endpoint
+- **Features**:
+  - Rate limiting (API: 10 req/s, General: 50 req/s)
+  - Gzip compression
+  - File upload support (50MB limit)
+  - Proxy headers for proper forwarding
+
+#### 6. **Frontend Nginx Config** (`frontend/nginx.conf`)
+- SPA routing support (React Router)
+- Static asset caching
+- Security headers
+- Gzip compression
+
+#### 7. **Backend Production Updates**
+- **database.py**: Now uses `DATABASE_URL` environment variable
+  - Supports Docker service names (`db` instead of `localhost`)
+  - Falls back to localhost for development
+- **main.py**: CORS configuration from environment
+  - `CORS_ORIGINS` environment variable support
+  - Includes production IP by default
+
+#### 8. **Deployment Scripts**
+
+**deploy.sh** - Main deployment script:
+- Checks Docker installation
+- Validates environment configuration
+- Builds Docker images
+- Starts all services
+- Performs health checks
+- Displays service status and URLs
+
+**scripts/generate-ssl.sh** - SSL certificate generation:
+- Creates self-signed certificates for testing
+- Sets up certificate directory structure
+- Valid for 365 days
+
+**scripts/backup-db.sh** - Database backup:
+- Creates timestamped SQL dumps
+- Compresses backups
+- Keeps last 7 backups automatically
+- Stores in `./backups/` directory
+
+**scripts/restore-db.sh** - Database restore:
+- Restores from backup file
+- Handles compressed backups
+- Safety confirmation prompt
+
+#### 9. **Configuration Files**
+
+**env.production.example** - Environment template:
+- Database credentials
+- Backend configuration
+- Frontend API URL
+- SSL certificate settings
+
+**README.deployment.md** - Complete deployment guide:
+- Architecture overview
+- Prerequisites
+- Step-by-step deployment instructions
+- SSL certificate setup (self-signed and Let's Encrypt)
+- Update procedures
+- Troubleshooting guide
+- Security considerations
+
+### Deployment Process
+
+#### Initial Deployment
+
+1. **Setup Environment**:
+   ```bash
+   cp env.production.example .env.production
+   # Edit .env.production with actual values
+   ```
+
+2. **Generate SSL Certificates**:
+   ```bash
+   # For testing (self-signed)
+   ./scripts/generate-ssl.sh
+   
+   # OR for production (Let's Encrypt)
+   # Follow instructions in README.deployment.md
+   ```
+
+3. **Deploy**:
+   ```bash
+   ./deploy.sh
+   ```
+
+#### Updating Application
+
+To deploy a new version:
+
+1. **Pull latest code** (if using git):
+   ```bash
+   git pull
+   ```
+
+2. **Rebuild and restart**:
+   ```bash
+   ./deploy.sh
+   ```
+
+   Or manually:
+   ```bash
+   docker-compose -f docker-compose.prod.yml build
+   docker-compose -f docker-compose.prod.yml up -d
+   ```
+
+### Access Points
+
+- **Application**: https://46.32.109.46
+- **API Documentation**: https://46.32.109.46/api/docs
+- **Health Check**: https://46.32.109.46/health
+
+### Files Created
+
+#### Docker Configuration:
+- `docker-compose.yml` - Development (database only)
+- `docker-compose.prod.yml` - Production (all services)
+- `backend/Dockerfile` - Backend container
+- `frontend/Dockerfile` - Frontend container
+- `frontend/nginx.conf` - Frontend web server config
+- `nginx/nginx.conf` - Reverse proxy config
+- `backend/.dockerignore` - Backend build exclusions
+- `frontend/.dockerignore` - Frontend build exclusions
+
+#### Scripts:
+- `deploy.sh` - Main deployment script
+- `scripts/generate-ssl.sh` - SSL certificate generation
+- `scripts/backup-db.sh` - Database backup
+- `scripts/restore-db.sh` - Database restore
+
+#### Configuration:
+- `env.production.example` - Environment template
+- `README.deployment.md` - Deployment documentation
+
+#### Modified Files:
+- `backend/database.py` - Environment variable support
+- `backend/main.py` - CORS environment configuration
+
+### Security Features
+
+1. **HTTPS/SSL**: Full encryption for all traffic
+2. **Rate Limiting**: Protection against abuse
+3. **Security Headers**: XSS protection, HSTS, etc.
+4. **Internal Network**: Database not exposed externally
+5. **Environment Variables**: Secrets not in code
+6. **Health Checks**: Automatic service monitoring
+
+### Maintenance Commands
+
+```bash
+# View logs
+docker-compose -f docker-compose.prod.yml logs -f
+
+# Stop services
+docker-compose -f docker-compose.prod.yml down
+
+# Restart service
+docker-compose -f docker-compose.prod.yml restart backend
+
+# Backup database
+./scripts/backup-db.sh
+
+# Restore database
+./scripts/restore-db.sh backups/rtdwms_backup_YYYYMMDD_HHMMSS.sql.gz
+```
+
+### Production Readiness
+
+The deployment is production-ready with:
+- ✅ Containerized services
+- ✅ SSL/HTTPS support
+- ✅ Reverse proxy (Nginx)
+- ✅ Health checks
+- ✅ Persistent storage
+- ✅ Environment-based configuration
+- ✅ Backup/restore capabilities
+- ✅ Comprehensive documentation
+
+### Next Steps for Production
+
+1. **SSL Certificates**: Replace self-signed with Let's Encrypt certificates
+2. **Domain Name**: Configure DNS to point to IP (optional)
+3. **Monitoring**: Set up log aggregation and monitoring
+4. **Backups**: Schedule automated database backups
+5. **Updates**: Establish update workflow for new versions
+6. **Firewall**: Ensure only ports 80/443 are exposed
+
+The application is now ready for external demonstration and production use!

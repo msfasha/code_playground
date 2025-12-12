@@ -84,7 +84,7 @@ if [ ! -d "venv" ]; then
     echo -e "${RED}Virtual environment not found. Please create it first:${NC}"
     echo -e "${YELLOW}python3 -m venv venv${NC}"
     echo -e "${YELLOW}source venv/bin/activate${NC}"
-    echo -e "${YELLOW}pip install -r requirements.txt${NC}"
+    echo -e "${YELLOW}pip install -r backend/requirements.txt${NC}"
     exit 1
 fi
 

@@ -4,6 +4,7 @@ Main FastAPI application.
 Sets up the FastAPI app with database connection, CORS, and routers.
 """
 import logging
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -56,12 +57,21 @@ app = FastAPI(
 )
 
 # Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
+# Get allowed origins from environment variable or use defaults
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    allow_origins = [origin.strip() for origin in cors_origins_env.split(",")]
+else:
+    # Default development origins
+    allow_origins = [
         "http://localhost:5173",  # Vite dev server
         "http://localhost:3000",  # Alternative frontend port
-    ],
+        "https://46.32.109.46",   # Production IP
+    ]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

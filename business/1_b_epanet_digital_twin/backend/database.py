@@ -3,13 +3,18 @@ Database connection and session management.
 
 Uses SQLAlchemy with async support for PostgreSQL (TimescaleDB).
 """
+import os
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 from models import Base
 
 # Database connection string
 # Format: postgresql+asyncpg://user:password@host:port/database
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/rtdwms"
+# Use environment variable if available, otherwise default to localhost
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql+asyncpg://postgres:postgres@localhost:5432/rtdwms"
+)
 
 # Create async engine
 engine = create_async_engine(
