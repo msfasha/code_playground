@@ -38,3 +38,4 @@ rm "$CERT_DIR/cert.csr"
 echo -e "${GREEN}✓ Self-signed certificate generated${NC}"
 echo -e "${YELLOW}Note: Browsers will show a security warning for self-signed certificates.${NC}"
 echo -e "${YELLOW}For production, use Let's Encrypt certificates instead.${NC}"
+

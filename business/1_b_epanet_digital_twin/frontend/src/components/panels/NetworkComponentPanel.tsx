@@ -672,3 +672,4 @@ export function NetworkComponentPanel() {
     </div>
   );
 }
+

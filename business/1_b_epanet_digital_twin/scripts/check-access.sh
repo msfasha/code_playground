@@ -78,3 +78,4 @@ echo "To open firewall ports (if using UFW):"
 echo "  sudo ufw allow 80/tcp"
 echo "  sudo ufw allow 443/tcp"
 echo ""
+

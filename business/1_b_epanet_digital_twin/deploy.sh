@@ -129,3 +129,4 @@ echo -e "${YELLOW}Stop services:${NC} $COMPOSE_CMD -f docker-compose.prod.yml do
 echo -e "${YELLOW}Restart service:${NC} $COMPOSE_CMD -f docker-compose.prod.yml restart <service>"
 echo -e "${YELLOW}View status:${NC} $COMPOSE_CMD -f docker-compose.prod.yml ps"
 echo ""
+
