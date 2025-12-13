@@ -1,14 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { TopToolbar } from '../components/toolbar/TopToolbar';
 import { NetworkComponentPanel } from '../components/panels/NetworkComponentPanel';
-import { EditorProvider } from '../context/EditorContext';
 
 export function AppShell() {
   const location = useLocation();
 
   return (
-    <EditorProvider>
-      <div className="rtdwms-shell">
+    <div className="rtdwms-shell">
       <header className="rtdwms-topbar">
         <div className="rtdwms-topbar-left">
           <div className="rtdwms-brand">Hydro-Twin</div>
@@ -45,8 +43,7 @@ export function AppShell() {
           <NetworkComponentPanel />
         </aside>
       </div>
-      </div>
-    </EditorProvider>
+    </div>
   );
 }
 

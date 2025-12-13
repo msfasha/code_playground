@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNetwork } from '../context/NetworkContext';
 
@@ -153,60 +153,13 @@ export function MonitoringPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Poll anomalies at monitoring interval
-  useEffect(() => {
-    if (!networkId || !monitoringStatus || monitoringStatus.status !== 'running') {
-      return;
-    }
+  const isRunning = monitoringStatus?.status === 'running';
+  const monitoringIntervalMinutes = monitoringStatus?.configuration?.monitoring_interval_minutes ?? 1.0;
+  const dashboardTimeWindowMinutes = monitoringStatus?.configuration?.time_window_minutes ?? 5.0;
 
-    const monitoringIntervalMs = (monitoringStatus.configuration?.monitoring_interval_minutes || 1.0) * 60 * 1000;
-    const interval = setInterval(() => {
-      fetchAnomalies();
-    }, monitoringIntervalMs);
-    
-    fetchAnomalies(); // Fetch immediately
-    
-    return () => clearInterval(interval);
-  }, [networkId, monitoringStatus?.status, monitoringStatus?.configuration?.monitoring_interval_minutes]);
-
-  // Fetch dashboard metrics
-  const fetchDashboardMetrics = async () => {
+  const fetchAnomalies = useCallback(async () => {
     if (!networkId) return;
-    
-    setDashboardLoading(true);
-    try {
-      const timeWindow = monitoringStatus?.configuration?.time_window_minutes || 5.0;
-      const response = await fetch(`${API}/monitoring/dashboard-metrics?network_id=${networkId}&time_window_minutes=${timeWindow}`);
-      if (response.ok) {
-        const data: DashboardMetrics = await response.json();
-        setDashboardMetrics(data);
-      }
-    } catch (err) {
-      console.error('Error fetching dashboard metrics:', err);
-    } finally {
-      setDashboardLoading(false);
-    }
-  };
 
-  // Poll dashboard metrics at monitoring interval
-  useEffect(() => {
-    if (!networkId || !monitoringStatus || monitoringStatus.status !== 'running') {
-      return;
-    }
-
-    const monitoringIntervalMs = (monitoringStatus.configuration?.monitoring_interval_minutes || 1.0) * 60 * 1000;
-    const interval = setInterval(() => {
-      fetchDashboardMetrics();
-    }, monitoringIntervalMs);
-    
-    fetchDashboardMetrics(); // Fetch immediately
-    
-    return () => clearInterval(interval);
-  }, [networkId, monitoringStatus?.status, monitoringStatus?.configuration?.monitoring_interval_minutes, monitoringStatus?.configuration?.time_window_minutes]);
-
-  const fetchAnomalies = async () => {
-    if (!networkId) return;
-    
     setAnomaliesLoading(true);
     try {
       const severityParam = severityFilter !== 'all' ? `&severity=${severityFilter}` : '';
@@ -220,14 +173,61 @@ export function MonitoringPage() {
     } finally {
       setAnomaliesLoading(false);
     }
-  };
+  }, [networkId, severityFilter]);
+
+  const fetchDashboardMetrics = useCallback(async () => {
+    if (!networkId) return;
+
+    setDashboardLoading(true);
+    try {
+      const response = await fetch(
+        `${API}/monitoring/dashboard-metrics?network_id=${networkId}&time_window_minutes=${dashboardTimeWindowMinutes}`,
+      );
+      if (response.ok) {
+        const data: DashboardMetrics = await response.json();
+        setDashboardMetrics(data);
+      }
+    } catch (err) {
+      console.error('Error fetching dashboard metrics:', err);
+    } finally {
+      setDashboardLoading(false);
+    }
+  }, [networkId, dashboardTimeWindowMinutes]);
+
+  // Poll anomalies at monitoring interval
+  useEffect(() => {
+    if (!networkId || !isRunning) return;
+
+    const monitoringIntervalMs = monitoringIntervalMinutes * 60 * 1000;
+    const interval = setInterval(() => {
+      fetchAnomalies();
+    }, monitoringIntervalMs);
+    
+    fetchAnomalies(); // Fetch immediately
+    
+    return () => clearInterval(interval);
+  }, [networkId, isRunning, monitoringIntervalMinutes, fetchAnomalies]);
+
+  // Poll dashboard metrics at monitoring interval
+  useEffect(() => {
+    if (!networkId || !isRunning) return;
+
+    const monitoringIntervalMs = monitoringIntervalMinutes * 60 * 1000;
+    const interval = setInterval(() => {
+      fetchDashboardMetrics();
+    }, monitoringIntervalMs);
+    
+    fetchDashboardMetrics(); // Fetch immediately
+    
+    return () => clearInterval(interval);
+  }, [networkId, isRunning, monitoringIntervalMinutes, fetchDashboardMetrics]);
 
   // Fetch anomalies when filter changes
   useEffect(() => {
-    if (networkId && monitoringStatus?.status === 'running') {
+    if (networkId && isRunning) {
       fetchAnomalies();
     }
-  }, [severityFilter]);
+  }, [networkId, isRunning, fetchAnomalies]);
 
   const startMonitoring = async () => {
     // Check if we have network data
@@ -319,8 +319,9 @@ export function MonitoringPage() {
       } else {
         throw new Error('Monitoring service failed to start');
       }
-    } catch (err: any) {
-      setError(`Failed to start monitoring: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Failed to start monitoring: ${msg}`);
       setMessage(null);
     }
   };
@@ -401,12 +402,12 @@ export function MonitoringPage() {
         setMessage('Monitoring service stopped');
         checkMonitoringStatus(); // Refresh status
       }
-    } catch (err: any) {
-      setError(`Failed to stop monitoring: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Failed to stop monitoring: ${msg}`);
     }
   };
 
-  const isRunning = monitoringStatus?.status === 'running';
   const isStarting = monitoringStatus?.status === 'starting';
 
   const getSeverityColor = (severity: string) => {

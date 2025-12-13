@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNetwork } from '../context/NetworkContext';
 
 const API_ROOT = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
@@ -92,25 +92,12 @@ export function SimulatorPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Poll logs at generation rate interval
-  useEffect(() => {
-    if (!networkId || !simulatorStatus || simulatorStatus.status !== 'running') {
-      return;
-    }
+  const isRunning = simulatorStatus?.status === 'running';
+  const generationRateMinutes = simulatorStatus?.configuration?.generation_rate_minutes ?? 5;
 
-    const generationRateMs = (simulatorStatus.configuration?.generation_rate_minutes || 5) * 60 * 1000;
-    const interval = setInterval(() => {
-      fetchLogs();
-    }, generationRateMs);
-    
-    fetchLogs(); // Fetch immediately
-    
-    return () => clearInterval(interval);
-  }, [networkId, simulatorStatus?.status, simulatorStatus?.configuration?.generation_rate_minutes]);
-
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     if (!networkId) return;
-    
+
     try {
       const response = await fetch(`${API}/scada-simulator/logs?network_id=${networkId}&limit=10`);
       if (response.ok) {
@@ -120,7 +107,21 @@ export function SimulatorPage() {
     } catch (err) {
       console.error('Error fetching logs:', err);
     }
-  };
+  }, [networkId]);
+
+  // Poll logs at generation rate interval
+  useEffect(() => {
+    if (!networkId || !isRunning) return;
+
+    const generationRateMs = generationRateMinutes * 60 * 1000;
+    const interval = setInterval(() => {
+      fetchLogs();
+    }, generationRateMs);
+    
+    fetchLogs(); // Fetch immediately
+    
+    return () => clearInterval(interval);
+  }, [networkId, isRunning, generationRateMinutes, fetchLogs]);
 
   const startSimulator = async () => {
     // Check if we have network data
@@ -213,8 +214,9 @@ export function SimulatorPage() {
       } else {
         throw new Error('Simulator failed to start');
       }
-    } catch (err: any) {
-      setError(`Failed to start simulator: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Failed to start simulator: ${msg}`);
       setMessage(null);
     }
   };
@@ -242,8 +244,9 @@ export function SimulatorPage() {
         setMessage('SCADA simulator stopped');
         checkSimulatorStatus(); // Refresh status
       }
-    } catch (err: any) {
-      setError(`Failed to stop simulator: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Failed to stop simulator: ${msg}`);
     }
   };
 
@@ -276,12 +279,12 @@ export function SimulatorPage() {
         setLogs([]); // Clear logs from UI
         fetchLogs(); // Refresh logs (will be empty now)
       }
-    } catch (err: any) {
-      setError(`Failed to clear readings: ${err.message}`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(`Failed to clear readings: ${msg}`);
     }
   };
 
-  const isRunning = simulatorStatus?.status === 'running';
   const isStarting = simulatorStatus?.status === 'starting';
 
   return (
