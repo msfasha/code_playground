@@ -31,7 +31,9 @@ import type { SelectedAsset, SelectedKind } from '../context/EditorContext';
  * - Interactive Leaflet map with network overlay
  * - Real-time coordinate transformation from Palestinian UTM to WGS 84
  */
-const API_BASE = 'http://localhost:8000';
+const API_ROOT = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
+const API_BASE = API_ROOT.replace(/\/$/, '');
+const API = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 interface Anomaly {
   id: number;
@@ -137,7 +139,7 @@ export function NetworkViewPage() {
     // Fetch anomalies from monitoring service
     const fetchAnomalies = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/monitoring/anomalies?network_id=${networkId}&limit=1000`);
+        const response = await fetch(`${API}/monitoring/anomalies?network_id=${networkId}&limit=1000`);
         if (response.ok) {
           const data = await response.json();
           setAnomalies(data.anomalies || []);
@@ -149,7 +151,7 @@ export function NetworkViewPage() {
 
     const checkMonitoringStatus = async () => {
       try {
-        const response = await fetch(`${API_BASE}/api/monitoring/status`);
+        const response = await fetch(`${API}/monitoring/status`);
         if (response.ok) {
           const data: MonitoringStatus = await response.json();
           
@@ -329,7 +331,7 @@ export function NetworkViewPage() {
         const updatedContent = epanetParser.writeZonesToINP(fileContent, updatedZones);
         
         // Send to backend
-        const response = await fetch(`${API_BASE}/api/network/${networkId}/zones`, {
+        const response = await fetch(`${API}/network/${networkId}/zones`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

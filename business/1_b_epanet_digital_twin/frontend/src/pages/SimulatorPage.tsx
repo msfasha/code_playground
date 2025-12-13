@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNetwork } from '../context/NetworkContext';
 
-const API_BASE = 'http://localhost:8000';
+const API_ROOT = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
+const API_BASE = API_ROOT.replace(/\/$/, '');
+const API = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 interface SimulatorStatus {
   status: 'stopped' | 'starting' | 'running' | 'error';
@@ -73,7 +75,7 @@ export function SimulatorPage() {
   // Poll simulator status
   const checkSimulatorStatus = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/scada-simulator/status`);
+      const response = await fetch(`${API}/scada-simulator/status`);
       if (response.ok) {
         const data: SimulatorStatus = await response.json();
         setSimulatorStatus(data);
@@ -110,7 +112,7 @@ export function SimulatorPage() {
     if (!networkId) return;
     
     try {
-      const response = await fetch(`${API_BASE}/api/scada-simulator/logs?network_id=${networkId}&limit=10`);
+      const response = await fetch(`${API}/scada-simulator/logs?network_id=${networkId}&limit=10`);
       if (response.ok) {
         const data = await response.json();
         setLogs(data.logs || []);
@@ -145,7 +147,7 @@ export function SimulatorPage() {
         formData.append('file', networkFile);
         
         setMessage('Uploading network to backend...');
-        const uploadResponse = await fetch(`${API_BASE}/api/network/upload`, {
+        const uploadResponse = await fetch(`${API}/network/upload`, {
           method: 'POST',
           body: formData
         });
@@ -166,7 +168,7 @@ export function SimulatorPage() {
 
       // 2. Establish baseline (only if not already established)
       setMessage('Establishing baseline...');
-      const baselineResponse = await fetch(`${API_BASE}/api/network/${id}/baseline`, {
+      const baselineResponse = await fetch(`${API}/network/${id}/baseline`, {
         method: 'POST'
       });
       
@@ -180,7 +182,7 @@ export function SimulatorPage() {
 
       // 3. Start SCADA simulator
       setMessage('Starting SCADA simulator...');
-      const startResponse = await fetch(`${API_BASE}/api/scada-simulator/start`, {
+      const startResponse = await fetch(`${API}/scada-simulator/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -224,7 +226,7 @@ export function SimulatorPage() {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/scada-simulator/stop`, {
+      const response = await fetch(`${API}/scada-simulator/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ network_id: networkId })
@@ -257,7 +259,7 @@ export function SimulatorPage() {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/scada-simulator/clear-readings`, {
+      const response = await fetch(`${API}/scada-simulator/clear-readings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ network_id: networkId })

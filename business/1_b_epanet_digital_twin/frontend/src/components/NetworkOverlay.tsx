@@ -104,6 +104,71 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
     return { junctionAnomalies, pipeAnomalies };
   };
 
+  const getMidpointAndAngle = (latlngs: L.LatLngExpression[]) => {
+    if (!map) return null;
+    const pts = latlngs.map((x) => L.latLng(x as any));
+    if (pts.length < 2) return null;
+
+    // find halfway point by distance along polyline
+    const segLens: number[] = [];
+    let total = 0;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const d = map.distance(pts[i], pts[i + 1]);
+      segLens.push(d);
+      total += d;
+    }
+
+    const half = total / 2;
+    let acc = 0;
+    for (let i = 0; i < segLens.length; i++) {
+      const nextAcc = acc + segLens[i];
+      if (nextAcc >= half) {
+        const t = segLens[i] > 0 ? (half - acc) / segLens[i] : 0;
+        const a = pts[i];
+        const b = pts[i + 1];
+        const pos = L.latLng(a.lat + (b.lat - a.lat) * t, a.lng + (b.lng - a.lng) * t);
+
+        const pa = map.latLngToLayerPoint(a);
+        const pb = map.latLngToLayerPoint(b);
+        const dx = pb.x - pa.x;
+        const dy = pb.y - pa.y;
+        const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+
+        return { pos, angle };
+      }
+      acc = nextAcc;
+    }
+
+    // fallback to middle segment
+    const midIdx = Math.floor((pts.length - 1) / 2);
+    const a = pts[midIdx];
+    const b = pts[midIdx + 1];
+    const pos = L.latLng((a.lat + b.lat) / 2, (a.lng + b.lng) / 2);
+    const pa = map.latLngToLayerPoint(a);
+    const pb = map.latLngToLayerPoint(b);
+    const angle = (Math.atan2(pb.y - pa.y, pb.x - pa.x) * 180) / Math.PI;
+    return { pos, angle };
+  };
+
+  const pumpIconHtml = (angleDeg: number) => `
+    <div style="width:22px;height:22px;transform: rotate(${angleDeg}deg);pointer-events:none;">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <circle cx="9" cy="12" r="5" fill="#ffffff" stroke="#6f42c1" stroke-width="2" />
+        <path d="M14 8 L22 12 L14 16 Z" fill="#6f42c1" />
+      </svg>
+    </div>
+  `;
+
+  const valveIconHtml = (angleDeg: number) => `
+    <div style="width:22px;height:22px;transform: rotate(${angleDeg}deg);pointer-events:none;">
+      <svg viewBox="0 0 24 24" width="22" height="22">
+        <path d="M2 12 L10 7 L10 17 Z" fill="#0ea5e9" />
+        <path d="M22 12 L14 7 L14 17 Z" fill="#0ea5e9" />
+        <rect x="10" y="10" width="4" height="4" fill="#ffffff" stroke="#0ea5e9" stroke-width="1.5" />
+      </svg>
+    </div>
+  `;
+
   // Keep latest callback without forcing geometry rebuilds
   useEffect(() => {
     onItemClickRef.current = onItemClick;
@@ -303,6 +368,20 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
 
         polylinesRef.current.set(pump.id, line);
         line.addTo(layerGroup);
+
+        const mid = getMidpointAndAngle(latLngs);
+        if (mid) {
+          L.marker(mid.pos, {
+            interactive: false,
+            keyboard: false,
+            icon: L.divIcon({
+              className: '',
+              html: pumpIconHtml(mid.angle),
+              iconSize: [22, 22],
+              iconAnchor: [11, 11],
+            }),
+          }).addTo(layerGroup);
+        }
       }
     });
 
@@ -344,6 +423,20 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
 
         polylinesRef.current.set(valve.id, line);
         line.addTo(layerGroup);
+
+        const mid = getMidpointAndAngle(latLngs);
+        if (mid) {
+          L.marker(mid.pos, {
+            interactive: false,
+            keyboard: false,
+            icon: L.divIcon({
+              className: '',
+              html: valveIconHtml(mid.angle),
+              iconSize: [22, 22],
+              iconAnchor: [11, 11],
+            }),
+          }).addTo(layerGroup);
+        }
       }
     });
 

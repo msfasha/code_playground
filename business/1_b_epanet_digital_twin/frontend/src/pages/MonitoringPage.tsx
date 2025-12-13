@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useNetwork } from '../context/NetworkContext';
 
-const API_BASE = 'http://localhost:8000';
+const API_ROOT = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
+const API_BASE = API_ROOT.replace(/\/$/, '');
+const API = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 interface MonitoringStatus {
   status: 'stopped' | 'starting' | 'running' | 'error';
@@ -135,7 +137,7 @@ export function MonitoringPage() {
   // Poll monitoring status every 3 seconds
   const checkMonitoringStatus = async () => {
     try {
-      const response = await fetch(`${API_BASE}/api/monitoring/status`);
+      const response = await fetch(`${API}/monitoring/status`);
       if (response.ok) {
         const data: MonitoringStatus = await response.json();
         setMonitoringStatus(data);
@@ -174,7 +176,7 @@ export function MonitoringPage() {
     setDashboardLoading(true);
     try {
       const timeWindow = monitoringStatus?.configuration?.time_window_minutes || 5.0;
-      const response = await fetch(`${API_BASE}/api/monitoring/dashboard-metrics?network_id=${networkId}&time_window_minutes=${timeWindow}`);
+      const response = await fetch(`${API}/monitoring/dashboard-metrics?network_id=${networkId}&time_window_minutes=${timeWindow}`);
       if (response.ok) {
         const data: DashboardMetrics = await response.json();
         setDashboardMetrics(data);
@@ -208,7 +210,7 @@ export function MonitoringPage() {
     setAnomaliesLoading(true);
     try {
       const severityParam = severityFilter !== 'all' ? `&severity=${severityFilter}` : '';
-      const response = await fetch(`${API_BASE}/api/monitoring/anomalies?network_id=${networkId}&limit=50${severityParam}`);
+      const response = await fetch(`${API}/monitoring/anomalies?network_id=${networkId}&limit=50${severityParam}`);
       if (response.ok) {
         const data = await response.json();
         setAnomalies(data.anomalies || []);
@@ -252,7 +254,7 @@ export function MonitoringPage() {
         formData.append('file', networkFile);
         
         setMessage('Uploading network to backend...');
-        const uploadResponse = await fetch(`${API_BASE}/api/network/upload`, {
+        const uploadResponse = await fetch(`${API}/network/upload`, {
           method: 'POST',
           body: formData
         });
@@ -273,7 +275,7 @@ export function MonitoringPage() {
 
       // 2. Establish baseline (only if not already established)
       setMessage('Establishing baseline...');
-      const baselineResponse = await fetch(`${API_BASE}/api/network/${id}/baseline`, {
+      const baselineResponse = await fetch(`${API}/network/${id}/baseline`, {
         method: 'POST'
       });
       
@@ -287,7 +289,7 @@ export function MonitoringPage() {
 
       // 3. Start monitoring service
       setMessage('Starting monitoring service...');
-      const startResponse = await fetch(`${API_BASE}/api/monitoring/start`, {
+      const startResponse = await fetch(`${API}/monitoring/start`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -344,7 +346,7 @@ export function MonitoringPage() {
     }
     
     try {
-      const response = await fetch(`${API_BASE}/api/monitoring/clear-data?network_id=${networkId}`, {
+      const response = await fetch(`${API}/monitoring/clear-data?network_id=${networkId}`, {
         method: 'DELETE',
       });
       
@@ -383,7 +385,7 @@ export function MonitoringPage() {
     setError(null);
     
     try {
-      const response = await fetch(`${API_BASE}/api/monitoring/stop`, {
+      const response = await fetch(`${API}/monitoring/stop`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ network_id: networkId })

@@ -10,7 +10,9 @@ interface ZoneManagerProps {
   onZoneSelect?: (zone: Zone) => void;
 }
 
-const API_BASE = 'http://localhost:8000';
+const API_ROOT = (import.meta.env.VITE_API_URL as string | undefined) ?? 'http://localhost:8000';
+const API_BASE = API_ROOT.replace(/\/$/, '');
+const API = API_BASE.endsWith('/api') ? API_BASE : `${API_BASE}/api`;
 
 export const ZoneManager: React.FC<ZoneManagerProps> = ({
   network,
@@ -47,7 +49,7 @@ export const ZoneManager: React.FC<ZoneManagerProps> = ({
       const updatedContent = epanetParser.writeZonesToINP(fileContent, updatedZones);
       
       // Send to backend
-      const response = await fetch(`${API_BASE}/api/network/${networkId}/zones`, {
+      const response = await fetch(`${API}/network/${networkId}/zones`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
