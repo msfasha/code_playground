@@ -56,4 +56,3 @@ cd "$BACKUP_DIR"
 ls -t rtdwms_backup_*.sql.gz | tail -n +8 | xargs rm -f 2>/dev/null || true
 
 echo -e "${GREEN}✓ Backup complete${NC}"
-

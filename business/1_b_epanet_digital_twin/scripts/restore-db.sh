@@ -74,4 +74,3 @@ if [ -n "$TEMP_FILE" ]; then
 fi
 
 echo -e "${GREEN}✓ Database restored successfully${NC}"
-
