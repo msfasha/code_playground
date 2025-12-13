@@ -48,6 +48,7 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
   const lastMapClickRef = useRef<SelectedAsset | null>(null);
   const hasInitialFitRef = useRef<boolean>(false);
   const lastNetworkIdRef = useRef<string | null>(null);
+  const onItemClickRef = useRef<NetworkOverlayProps['onItemClick']>(onItemClick);
 
   // Helper function to get severity color
   const getSeverityColor = (severity: string): string => {
@@ -63,46 +64,53 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
     }
   };
 
-  useEffect(() => {
-    if (!map || !network) return;
+  const buildAnomalyMaps = (items: Anomaly[]) => {
+    // For each (location_id, sensor_type) keep the most severe; if tie, keep most recent.
+    const byLocationAndType = new Map<string, Anomaly>();
+    const severityOrder: Record<Anomaly['severity'], number> = { critical: 3, high: 2, medium: 1 };
 
-    // Build lookup maps for anomalies
+    items.forEach((anomaly) => {
+      const key = `${anomaly.location_id}_${anomaly.sensor_type}`;
+      const existing = byLocationAndType.get(key);
+
+      if (!existing) {
+        byLocationAndType.set(key, anomaly);
+        return;
+      }
+
+      const a = severityOrder[anomaly.severity];
+      const b = severityOrder[existing.severity];
+
+      if (a > b) {
+        byLocationAndType.set(key, anomaly);
+        return;
+      }
+
+      if (a === b && new Date(anomaly.timestamp) > new Date(existing.timestamp)) {
+        byLocationAndType.set(key, anomaly);
+      }
+    });
+
     const junctionAnomalies = new Map<string, Anomaly>();
     const pipeAnomalies = new Map<string, Anomaly>();
+    byLocationAndType.forEach((anomaly) => {
+      if (anomaly.sensor_type === 'pressure') {
+        junctionAnomalies.set(anomaly.location_id, anomaly);
+      } else if (anomaly.sensor_type === 'flow') {
+        pipeAnomalies.set(anomaly.location_id, anomaly);
+      }
+    });
 
-    if (anomalies && anomalies.length > 0) {
-      // Process anomalies: for each location, keep the most recent one with highest severity
-      const anomalyMap = new Map<string, Anomaly>();
+    return { junctionAnomalies, pipeAnomalies };
+  };
 
-      anomalies.forEach(anomaly => {
-        const key = `${anomaly.location_id}_${anomaly.sensor_type}`;
-        const existing = anomalyMap.get(key);
+  // Keep latest callback without forcing geometry rebuilds
+  useEffect(() => {
+    onItemClickRef.current = onItemClick;
+  }, [onItemClick]);
 
-        if (!existing) {
-          anomalyMap.set(key, anomaly);
-        } else {
-          // Keep the one with higher severity (critical > high > medium)
-          const severityOrder = { 'critical': 3, 'high': 2, 'medium': 1 };
-          if (severityOrder[anomaly.severity] > severityOrder[existing.severity]) {
-            anomalyMap.set(key, anomaly);
-          } else if (severityOrder[anomaly.severity] === severityOrder[existing.severity]) {
-            // Same severity, keep the most recent (anomalies are already sorted by timestamp desc)
-            if (new Date(anomaly.timestamp) > new Date(existing.timestamp)) {
-              anomalyMap.set(key, anomaly);
-            }
-          }
-        }
-      });
-
-      // Separate into junction and pipe maps
-      anomalyMap.forEach((anomaly) => {
-        if (anomaly.sensor_type === 'pressure') {
-          junctionAnomalies.set(anomaly.location_id, anomaly);
-        } else if (anomaly.sensor_type === 'flow') {
-          pipeAnomalies.set(anomaly.location_id, anomaly);
-        }
-      });
-    }
+  useEffect(() => {
+    if (!map || !network) return;
 
     console.log('NetworkOverlay: Map and network available');
     console.log('Network coordinates count:', network.coordinates.length);
@@ -173,11 +181,6 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
         markerColor = '#ffc107'; // Yellow for tanks
         kind = 'tank';
       } else if (junction) {
-        // Check for pressure anomaly for this junction
-        const anomaly = junctionAnomalies.get(nodeId);
-        if (anomaly) {
-          markerColor = getSeverityColor(anomaly.severity);
-        }
         kind = 'junction';
       }
 
@@ -196,11 +199,11 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
       (marker as any).locationId = nodeId;
       
       // Add click handler for selection
-      if (onItemClick) {
+      if (onItemClickRef.current) {
         marker.on('click', () => {
           // Track that this selection came from a map click
           lastMapClickRef.current = { kind, id: nodeId };
-          onItemClick(kind, nodeId);
+          onItemClickRef.current?.(kind, nodeId);
         });
       }
       
@@ -216,9 +219,7 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
       const node2Coord = transformedCoords.find(c => c.nodeId === pipe.node2);
 
       if (node1Coord && node2Coord) {
-        // Check for flow anomaly for this pipe
-        const anomaly = pipeAnomalies.get(pipe.id);
-        const pipeColor = anomaly ? getSeverityColor(anomaly.severity) : '#000000'; // Black if no anomaly
+        const pipeColor = '#000000'; // Default pipe color (anomaly styling applied in separate effect)
 
         // Get vertices for this pipe
         const pipeVertices = (network.vertices || [])
@@ -248,11 +249,11 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
         (line as any).locationId = pipe.id;
         
         // Add click handler for selection (popup will open automatically via Leaflet)
-        if (onItemClick) {
+        if (onItemClickRef.current) {
           line.on('click', () => {
             // Track that this selection came from a map click
             lastMapClickRef.current = { kind: 'pipe', id: pipe.id };
-            onItemClick('pipe', pipe.id);
+            onItemClickRef.current?.('pipe', pipe.id);
           });
         }
         
@@ -293,10 +294,10 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
         // Popups are intentionally disabled: selection is shown in the right panel.
         (line as any).locationId = pump.id;
 
-        if (onItemClick) {
+        if (onItemClickRef.current) {
           line.on('click', () => {
             lastMapClickRef.current = { kind: 'pump', id: pump.id };
-            onItemClick('pump', pump.id);
+            onItemClickRef.current?.('pump', pump.id);
           });
         }
 
@@ -334,10 +335,10 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
 
         (line as any).locationId = valve.id;
 
-        if (onItemClick) {
+        if (onItemClickRef.current) {
           line.on('click', () => {
             lastMapClickRef.current = { kind: 'valve', id: valve.id };
-            onItemClick('valve', valve.id);
+            onItemClickRef.current?.('valve', valve.id);
           });
         }
 
@@ -355,51 +356,6 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
       hasInitialFitRef.current = true;
     }
 
-    // Handle highlighting when highlightLocation is provided
-    if (highlightLocation && layerGroup) {
-      if (highlightSensorType === 'pressure') {
-        // Find junction marker
-        const marker = layerGroup.getLayers().find((layer) => {
-          if (layer instanceof L.CircleMarker) {
-            return (layer as any).locationId === highlightLocation;
-          }
-          return false;
-        }) as L.CircleMarker | undefined;
-
-        if (marker) {
-          const latLng = marker.getLatLng();
-          map.setView(latLng, Math.max(map.getZoom(), 15));
-          // Add temporary highlight
-          const originalColor = marker.options.fillColor;
-          const originalRadius = marker.options.radius;
-          marker.setStyle({ fillColor: '#ff0000', radius: 10, weight: 3 });
-          setTimeout(() => {
-            marker.setStyle({ fillColor: originalColor, radius: originalRadius, weight: 2 });
-          }, 3000);
-        }
-      } else if (highlightSensorType === 'flow') {
-        // Find pipe line
-        const line = layerGroup.getLayers().find((layer) => {
-          if (layer instanceof L.Polyline) {
-            return (layer as any).locationId === highlightLocation;
-          }
-          return false;
-        }) as L.Polyline | undefined;
-        
-        if (line) {
-          const bounds = line.getBounds();
-          map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18 });
-          // Add temporary highlight
-          const originalColor = line.options.color;
-          const originalWeight = line.options.weight;
-          line.setStyle({ color: '#ff0000', weight: 10 });
-          setTimeout(() => {
-            line.setStyle({ color: originalColor, weight: originalWeight });
-          }, 3000);
-        }
-      }
-    }
-
     // Cleanup function
     return () => {
       if (layersRef.current) {
@@ -407,25 +363,53 @@ export const NetworkOverlay: React.FC<NetworkOverlayProps> = ({
         layersRef.current = null;
       }
     };
-  }, [map, network, anomalies, highlightLocation, highlightSensorType, onItemClick]); // Add onItemClick to dependencies
+  }, [map, network]);
+
+  // Handle highlighting from navigation without rebuilding geometry
+  useEffect(() => {
+    if (!map || !highlightLocation || !highlightSensorType) return;
+
+    if (highlightSensorType === 'pressure') {
+      const marker = markersRef.current.get(highlightLocation);
+      if (!marker) return;
+
+      const latLng = marker.getLatLng();
+      map.setView(latLng, Math.max(map.getZoom(), 15));
+
+      const originalColor = marker.options.fillColor as string | undefined;
+      const originalRadius = marker.options.radius as number | undefined;
+      marker.setStyle({ fillColor: '#ff0000', radius: 10, weight: 3 });
+      setTimeout(() => {
+        marker.setStyle({
+          fillColor: originalColor ?? '#007bff',
+          radius: originalRadius ?? 6,
+          weight: 2
+        });
+      }, 3000);
+    } else if (highlightSensorType === 'flow') {
+      const line = polylinesRef.current.get(highlightLocation);
+      if (!line) return;
+
+      const bounds = line.getBounds();
+      map.fitBounds(bounds, { padding: [50, 50], maxZoom: 18 });
+
+      const originalColor = line.options.color as string | undefined;
+      const originalWeight = line.options.weight as number | undefined;
+      line.setStyle({ color: '#ff0000', weight: 10 });
+      setTimeout(() => {
+        line.setStyle({
+          color: originalColor ?? '#000000',
+          weight: originalWeight ?? 3
+        });
+      }, 3000);
+    }
+  }, [map, highlightLocation, highlightSensorType]);
 
   // Handle selection highlighting
   useEffect(() => {
     if (!map || !network || !layersRef.current) return;
 
-    // Build anomaly maps for quick lookup
-    const junctionAnomalies = new Map<string, Anomaly>();
-    const pipeAnomalies = new Map<string, Anomaly>();
-
-    if (anomalies && anomalies.length > 0) {
-      anomalies.forEach(anomaly => {
-        if (anomaly.sensor_type === 'pressure') {
-          junctionAnomalies.set(anomaly.location_id, anomaly);
-        } else if (anomaly.sensor_type === 'flow') {
-          pipeAnomalies.set(anomaly.location_id, anomaly);
-        }
-      });
-    }
+    const { junctionAnomalies, pipeAnomalies } = buildAnomalyMaps(anomalies);
 
     // Reset all markers to default style (junction/reservoir/tank)
     markersRef.current.forEach((marker, id) => {

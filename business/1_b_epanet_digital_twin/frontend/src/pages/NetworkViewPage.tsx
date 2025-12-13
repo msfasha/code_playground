@@ -1,5 +1,5 @@
 // Import React hooks: useState for component state, useRef for DOM/element references, useEffect for side effects
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 // Import TypeScript type definitions (type-only imports, not runtime values)
 import type { ParsedNetwork, Zone } from '../utils/epanetParser'; // Type for parsed EPANET network data structure
 import type { LatLng } from '../utils/coordinateTransform'; // Type for latitude/longitude coordinate pairs
@@ -381,20 +381,20 @@ export function NetworkViewPage() {
   /**
    * Handle map item click (junction or pipe clicked on map)
    */
-  const handleMapItemClick = (kind: SelectedKind, id: string) => {
+  const handleMapItemClick = useCallback((kind: SelectedKind, id: string) => {
     // NetworkViewPage only supports junction/pipe selection UI right now.
     if (kind !== 'junction' && kind !== 'pipe') return;
     setShouldPanToSelected(false); // Don't pan when clicking directly on map
     setSelectedItem({ type: kind, id });
-  };
+  }, []);
   
   /**
    * Handle table row click (junction or pipe row clicked in table)
    */
-  const handleTableRowClick = (type: 'junction' | 'pipe', id: string) => {
+  const handleTableRowClick = useCallback((type: 'junction' | 'pipe', id: string) => {
     setShouldPanToSelected(true); // Pan when selecting from table
     setSelectedItem({ type, id });
-  };
+  }, []);
 
 
   // Return JSX structure for the Network View page
